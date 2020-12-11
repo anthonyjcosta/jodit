@@ -2255,6 +2255,7 @@ config_1.Config.prototype.controls.dialog = {
         icon: 'cancel',
         exec: function (dialog) {
             dialog.close();
+            dialog.toggleFullSizeBox(false);
         }
     }
 };
@@ -2519,13 +2520,16 @@ var Dialog = (function (_super) {
             condition = !this.container.classList.contains('jodit-dialog__box_fullsize');
         }
         this.container.classList.toggle('jodit-dialog__box_fullsize', condition);
+        this.toggleFullSizeBox(condition);
+        this.iSetMaximization = condition;
+        return condition;
+    };
+    Dialog.prototype.toggleFullSizeBox = function (condition) {
         [this.destination, this.destination.parentNode].forEach(function (box) {
             box &&
                 box.classList &&
                 box.classList.toggle('jodit_fullsize-box_true', condition);
         });
-        this.iSetMaximization = condition;
-        return condition;
     };
     Dialog.prototype.open = function (contentOrClose, titleOrModal, destroyAfterClose, modal) {
         global_1.eventEmitter.fire('closeAllPopups hideHelpers');
@@ -30696,6 +30700,8 @@ var widget_1 = __webpack_require__(17);
 var helpers_1 = __webpack_require__(1);
 var form_1 = __webpack_require__(36);
 var button_1 = __webpack_require__(15);
+config_1.Config.prototype.videoWrapper = false;
+config_1.Config.prototype.videoWrapperName = 'jodit-video-wrapper';
 config_1.Config.prototype.controls.video = {
     popup: function (editor, current, control, close) {
         var bylink = new form_1.UIForm(editor, [
@@ -30726,9 +30732,17 @@ config_1.Config.prototype.controls.video = {
                     return bycode.submit();
                 })
             ])
-        ]), tabs = [], selinfo = editor.s.save(), insertCode = function (code) {
+        ]), tabs = [], selinfo = editor.s.save(), wrapCode = function (code) {
+            if (!editor.o.videoWrapper) {
+                return code;
+            }
+            var wrapper = document.createElement('div');
+            wrapper.className = editor.o.videoWrapperName;
+            wrapper.innerHTML = code;
+            return wrapper.outerHTML;
+        }, insertCode = function (code) {
             editor.s.restore(selinfo);
-            editor.s.insertHTML(code);
+            editor.s.insertHTML(wrapCode(code));
             close();
         };
         tabs.push({
