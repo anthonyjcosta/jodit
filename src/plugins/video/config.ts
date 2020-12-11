@@ -11,6 +11,25 @@ import { convertMediaUrlToVideoEmbed } from '../../core/helpers';
 import { UIForm, UIInput, UITextArea, UIBlock } from '../../core/ui/form';
 import { Button } from '../../core/ui/button';
 
+declare module '../../config' {
+	interface Config {
+		videoWrapper: boolean;
+		videoWrapperName: string;
+	}
+}
+
+/**
+ * Wrap video embed iframe
+ * @type {boolean}
+ */
+Config.prototype.videoWrapper = false;
+
+/**
+ * Video embed wrapper class name
+ * @type {string}
+ */
+Config.prototype.videoWrapperName = 'jodit-video-wrapper';
+
 Config.prototype.controls.video = {
 	popup: (editor: IJodit, current, control, close) => {
 		const bylink: IUIForm = new UIForm(editor, [
@@ -45,9 +64,18 @@ Config.prototype.controls.video = {
 			]),
 			tabs: TabOption[] = [],
 			selinfo = editor.s.save(),
+			wrapCode = (code: string) => {
+				if (!editor.o.videoWrapper) {
+					return code;
+				}
+				const wrapper = document.createElement('div');
+				wrapper.className = editor.o.videoWrapperName;
+				wrapper.innerHTML = code;
+				return wrapper.outerHTML;
+			},
 			insertCode = (code: string) => {
 				editor.s.restore(selinfo);
-				editor.s.insertHTML(code);
+				editor.s.insertHTML(wrapCode(code));
 				close();
 			};
 
