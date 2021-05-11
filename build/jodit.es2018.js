@@ -25719,6 +25719,8 @@ function media(editor) {
 
 
 
+config/* Config.prototype.videoWrapper */.D.prototype.videoWrapper = false;
+config/* Config.prototype.videoWrapperName */.D.prototype.videoWrapperName = 'jodit-video-wrapper';
 config/* Config.prototype.controls.video */.D.prototype.controls.video = {
     popup: (editor, current, control, close) => {
         const bylink = new ui_form/* UIForm */.x4(editor, [
@@ -25745,9 +25747,17 @@ config/* Config.prototype.controls.video */.D.prototype.controls.video = {
             new ui_form/* UIBlock */.eC(editor, [
                 (0,ui_button/* Button */.zx)(editor, '', 'Insert', 'primary').onAction(() => bycode.submit())
             ])
-        ]), tabs = [], insertCode = (code) => {
+        ]), tabs = [], wrapCode = (code) => {
+            if (!editor.o.videoWrapper) {
+                return code;
+            }
+            const wrapper = document.createElement('div');
+            wrapper.className = editor.o.videoWrapperName;
+            wrapper.innerHTML = code;
+            return wrapper.outerHTML;
+        }, insertCode = (code) => {
             editor.s.restore();
-            editor.s.insertHTML(code);
+            editor.s.insertHTML(wrapCode(code));
             close();
         };
         editor.s.save();
