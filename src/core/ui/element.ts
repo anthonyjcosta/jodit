@@ -1,26 +1,29 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { ViewComponent, STATUSES } from '../component';
 import type {
 	IDictionary,
 	IUIElement,
 	IViewBased,
 	Nullable
 } from '../../types';
+import { ViewComponent } from '../component';
 import { Dom } from '../dom';
-import { getClassName } from '../helpers/utils';
-import { toArray } from '../helpers/array';
+import { Elms, Mods } from '../traits';
+import { isString } from '../helpers';
+import { Icon } from './icon';
 
 export abstract class UIElement<T extends IViewBased = IViewBased>
 	extends ViewComponent<T>
-	implements IUIElement {
+	implements IUIElement, Mods, Elms {
 	container!: HTMLElement;
+	name: string = '';
 
 	private __parentElement: Nullable<IUIElement> = null;
+
 	get parentElement(): Nullable<IUIElement> {
 		return this.__parentElement;
 	}
@@ -35,9 +38,24 @@ export abstract class UIElement<T extends IViewBased = IViewBased>
 		this.updateParentElement(this);
 	}
 
+	bubble(callback: (parent: IUIElement) => void): this {
+		let parent = this.parentElement;
+
+		while (parent) {
+			callback(parent);
+			parent = parent.parentElement;
+		}
+		return this;
+	}
+
 	updateParentElement(target: IUIElement): this {
 		this.__parentElement?.updateParentElement(target);
 		return this;
+	}
+
+	/** @override */
+	get<T>(chain: string, obj?: IDictionary): Nullable<T> {
+		return super.get(chain, obj) || ((this.getElm(chain) as unknown) as T);
 	}
 
 	/**
@@ -58,7 +76,14 @@ export abstract class UIElement<T extends IViewBased = IViewBased>
 				return pe as T;
 			}
 
-			pe = pe.parentElement;
+			if (!pe.parentElement && pe.container.parentElement) {
+				pe = UIElement.closestElement(
+					pe.container.parentElement,
+					UIElement
+				);
+			} else {
+				pe = pe.parentElement;
+			}
 		}
 
 		return null;
@@ -84,47 +109,29 @@ export abstract class UIElement<T extends IViewBased = IViewBased>
 
 	readonly mods: IDictionary<string | boolean | null> = {};
 
-	/**
-	 * Set/remove BEM class modification
-	 *
-	 * @param name
-	 * @param value if null, mod will be removed
-	 */
+	/** @see [[Mods.setMod]] */
 	setMod(
 		name: string,
 		value: string | boolean | null,
 		container: HTMLElement = this.container
 	): this {
-		name = name.toLowerCase();
-
-		if (this.mods[name] === value) {
-			return this;
-		}
-
-		const mod = `${this.componentName}_${name}`,
-			cl = container.classList;
-
-		toArray(cl).forEach(className => {
-			if (className.indexOf(mod) === 0) {
-				cl.remove(className);
-			}
-		});
-
-		value !== null &&
-			value !== '' &&
-			cl.add(`${mod}_${value.toString().toLowerCase()}`);
-
-		this.mods[name] = value;
-
+		Mods.setMod.call(this, name, value);
 		return this;
 	}
 
-	/**
-	 * Calc BEM element class name
-	 * @param elementName
-	 */
-	getClassName(elementName: string): string {
-		return `${this.componentName}__${elementName}`;
+	/** @see [[Mods.getMod]] */
+	getMod(name: string): string | boolean | null {
+		return Mods.getMod.call(this, name);
+	}
+
+	/** @see [[Elms.getElm]]*/
+	getElm(elementName: string): HTMLElement {
+		return Elms.getElm.call(this, elementName);
+	}
+
+	/** @see [[Elms.getElms]]*/
+	getElms(elementName: string): HTMLElement[] {
+		return Elms.getElms.call(this, elementName);
 	}
 
 	/**
@@ -154,7 +161,7 @@ export abstract class UIElement<T extends IViewBased = IViewBased>
 	 * Method create only box
 	 * @param options
 	 */
-	protected makeContainer(options?: IDictionary): HTMLElement {
+	protected render(options?: IDictionary): HTMLElement | string {
 		return this.j.c.div(this.componentName);
 	}
 
@@ -162,23 +169,35 @@ export abstract class UIElement<T extends IViewBased = IViewBased>
 	 * Create main HTML container
 	 */
 	protected createContainer(options?: IDictionary): HTMLElement {
-		return this.makeContainer(options);
+		const result = this.render(options);
+
+		if (isString(result)) {
+			const elm = this.j.c.fromHTML(
+				result
+					.replace(/\*([^*]+?)\*/g, (_, name) => Icon.get(name) || '')
+					.replace(/&__/g, this.componentName + '__')
+					.replace(/~([^~]+?)~/g, (_, s) => this.i18n(s))
+			);
+			elm.classList.add(this.componentName);
+			return elm;
+		}
+
+		return result;
 	}
 
+	/** @override */
 	constructor(jodit: T, options?: IDictionary) {
 		super(jodit);
 
 		this.container = this.createContainer(options);
 
 		Object.defineProperty(this.container, 'component', {
-			value: this
+			value: this,
+			configurable: true
 		});
-
-		if (getClassName(this) === getClassName(UIElement.prototype)) {
-			this.setStatus(STATUSES.ready);
-		}
 	}
 
+	/** @override */
 	destruct(): any {
 		Dom.safeRemove(this.container);
 		this.parentElement = null;

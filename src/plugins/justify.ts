@@ -1,13 +1,13 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
+import type { IJodit, IControlType } from '../types';
 import { Config } from '../config';
 import { Dom } from '../modules/';
 import { css } from '../core/helpers/';
-import { IJodit, IControlType } from '../types';
 
 Config.prototype.controls.align = {
 	name: 'left',
@@ -152,12 +152,15 @@ export const alignElement = (
 			case 'justifyfull':
 				box.style.textAlign = 'justify';
 				break;
+
 			case 'justifyright':
 				box.style.textAlign = 'right';
 				break;
+
 			case 'justifyleft':
 				box.style.textAlign = 'left';
 				break;
+
 			case 'justifycenter':
 				box.style.textAlign = 'center';
 				break;
@@ -170,6 +173,11 @@ export const alignElement = (
  * @param {Jodit} editor
  */
 export function justify(editor: IJodit): void {
+	editor.registerButton({
+		name: 'align',
+		group: 'indent'
+	});
+
 	const callback = (command: string): false | void => {
 		editor.s.focus();
 

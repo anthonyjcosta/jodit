@@ -1,12 +1,11 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import autobind from 'autobind-decorator';
-
-import { CanUndef, IJodit, IStyle, markerInfo, Nullable } from '../../../types';
+import type { CanUndef, IJodit, IStyle, Nullable } from '../../../types';
+import type { Style } from './style';
 import { isPlainObject, isVoid } from '../../helpers/checker';
 import { Dom } from '../../dom';
 import {
@@ -17,7 +16,7 @@ import {
 	normalizeNode,
 	trim
 } from '../../helpers';
-import { Style } from './style';
+import { autobind } from '../../decorators';
 
 enum mode {
 	UNWRAP = 'UNWRAP',
@@ -36,26 +35,28 @@ export class ApplyStyle {
 	apply(): void {
 		const sel = this.jodit.selection;
 
-		let selInfo: markerInfo[] = [];
-
 		const isCollapsed = sel.isCollapsed();
 
 		if (isCollapsed) {
 			const font = this.jodit.createInside.element('font');
 			sel.insertNode(font, false, false);
 			sel.setCursorIn(font);
-			selInfo = sel.save();
-			this.applyToElement(font);
+			sel.save();
+
+			if (!this.checkSpecialElements(font)) {
+				this.applyToElement(font);
+			}
+
 			Dom.unwrap(font);
 		} else {
-			selInfo = sel.save();
+			sel.save();
 			normalizeNode(sel.area.firstChild); // FF fix for test "commandsTest - Exec command "bold"
 
 			// for some text that contains a few STRONG elements, should unwrap all of these"
 			sel.wrapInTag(this.applyToElement);
 		}
 
-		sel.restore(selInfo);
+		sel.restore();
 	}
 
 	/**
@@ -70,6 +71,10 @@ export class ApplyStyle {
 	@autobind
 	private applyToElement(font: HTMLElement): void {
 		const { area } = this.jodit.selection;
+
+		if (this.checkSpecialElements(font)) {
+			return;
+		}
 
 		if (
 			this.checkSuitableParent(font) ||
@@ -120,8 +125,11 @@ export class ApplyStyle {
 		const newWrapper = Dom.replace(
 			wrapper,
 			this.style.element,
-			this.jodit.createInside
+			this.jodit.createInside,
+			true
 		);
+
+		attr(newWrapper, 'size', null);
 
 		if (this.style.elementIsBlock) {
 			this.postProcessListElement(newWrapper);
@@ -130,6 +138,20 @@ export class ApplyStyle {
 		if (this.style.options.style && this.style.elementIsDefault) {
 			css(newWrapper, this.style.options.style);
 		}
+
+		if (this.style.options.className) {
+			newWrapper.classList.toggle(this.style.options.className);
+		}
+	}
+
+	/**
+	 * Check if FONT inside STYLE or SCRIPT element
+	 * @param font
+	 */
+	private checkSpecialElements(font: HTMLElement): boolean {
+		const { editor } = this.jodit;
+
+		return Boolean(Dom.closest(font, ['style', 'script'], editor));
 	}
 
 	private checkSuitableParent(font: HTMLElement): boolean {
@@ -299,7 +321,7 @@ export class ApplyStyle {
 	@autobind
 	private isNormalNode(elm: Nullable<Node>): boolean {
 		return Boolean(
-			elm !== null &&
+			elm != null &&
 				!Dom.isEmptyTextNode(elm) &&
 				!this.jodit.s.isMarker(elm as HTMLElement)
 		);
@@ -463,8 +485,10 @@ export class ApplyStyle {
 			/^(OL|UL)$/i.test(this.style.element) &&
 			!Dom.isTag(wrapper.firstElementChild, 'li')
 		) {
-			const li = Dom.replace(wrapper, 'li', this.jodit.createInside);
-			const ul = Dom.wrap(li, this.style.element, this.jodit);
+			const ci = this.jodit.createInside;
+
+			const li = Dom.replace(wrapper, 'li', ci),
+				ul = Dom.wrap(li, this.style.element, ci);
 
 			if (ul) {
 				wrapper = ul;

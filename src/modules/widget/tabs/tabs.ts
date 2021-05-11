@@ -1,10 +1,11 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import './tabs.less';
+
 import type { IDictionary, IJodit, IUIButton } from '../../../types';
 import { $$, isFunction } from '../../../core/helpers';
 import { Button } from '../../../core/ui';

@@ -1,14 +1,14 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
+import type { IControlType, IDictionary, IJodit } from '../../types';
 import { Config } from '../../config';
-import { IControlType, IDictionary, IJodit } from '../../types';
 import { Dom } from '../../core/dom';
 import { attr } from '../../core/helpers/utils';
-import { $$, scrollIntoView } from '../../core/helpers';
+import { $$, scrollIntoViewIfNeeded } from '../../core/helpers';
 
 Config.prototype.table = {
 	allowCellSelection: true,
@@ -202,7 +202,7 @@ Config.prototype.controls.table = {
 
 				if (first_td) {
 					editor.s.setCursorIn(first_td);
-					scrollIntoView(first_td, editor.editor, editor.ed);
+					scrollIntoViewIfNeeded(first_td, editor.editor, editor.ed);
 				}
 
 				close();

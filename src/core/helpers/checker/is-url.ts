@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 /**
@@ -12,15 +12,21 @@
  * @return {boolean}
  */
 export function isURL(str: string): boolean {
-	const pattern = new RegExp(
-		'^(https?:\\/\\/)' + // protocol
-			'((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.?)+[a-z]{2,}|' + // domain name
-			'((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
-			'(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
-			'(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
-			'(\\#[-a-z\\d_]*)?$',
-		'i'
-	); // fragment locator
+	if (str.includes(' ')) {
+		return false;
+	}
 
-	return pattern.test(str);
+	if (typeof URL !== 'undefined') {
+		try {
+			const url = new URL(str);
+			return ['https:', 'http:', 'ftp:', 'file:'].includes(url.protocol);
+		} catch (e) {
+			return false;
+		}
+	}
+
+	const a = document.createElement('a');
+	a.href = str;
+
+	return Boolean(a.hostname);
 }

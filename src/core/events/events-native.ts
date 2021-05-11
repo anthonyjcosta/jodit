@@ -1,27 +1,28 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 /**
  * The module editor's event manager
  */
 
-import {
+import type {
 	CallbackFunction,
 	EventHandlerBlock,
 	IEventsNative
 } from '../../types';
 import { defaultNameSpace, EventHandlersStore } from './store';
-import { error, isArray, isFunction, isString } from '../helpers';
+import { isString } from '../helpers/checker/is-string';
+import { isFunction } from '../helpers/checker/is-function';
+import { isArray } from '../helpers/checker/is-array';
+import { error } from '../helpers/type';
 
 export class EventsNative implements IEventsNative {
 	readonly __key: string = '__JoditEventsNativeNamespaces';
 
 	private doc: Document = document;
-
-	private __stopped: EventHandlerBlock[][] = [];
 
 	private eachEvent(
 		events: string,
@@ -140,20 +141,6 @@ export class EventsNative implements IEventsNative {
 		}
 
 		element.dispatchEvent(evt);
-	}
-
-	private removeStop(currentBlocks: EventHandlerBlock[]) {
-		if (currentBlocks) {
-			const index: number = this.__stopped.indexOf(currentBlocks);
-			index !== -1 && this.__stopped.splice(index, 1);
-		}
-	}
-
-	private isStopped(currentBlocks: EventHandlerBlock[]): boolean {
-		return (
-			currentBlocks !== undefined &&
-			this.__stopped.indexOf(currentBlocks) !== -1
-		);
 	}
 
 	/**
@@ -324,6 +311,34 @@ export class EventsNative implements IEventsNative {
 		return this;
 	}
 
+	one(
+		subjectOrEvents: HTMLElement | HTMLElement[] | object | string,
+		eventsOrCallback: string | CallbackFunction,
+		handlerOrSelector?: CallbackFunction | void,
+		onTop: boolean = false
+	): this {
+		const subject = isString(subjectOrEvents) ? this : subjectOrEvents;
+
+		const events: string = isString(eventsOrCallback)
+			? eventsOrCallback
+			: (subjectOrEvents as string);
+
+		let callback = handlerOrSelector as CallbackFunction;
+
+		if (callback === undefined && isFunction(eventsOrCallback)) {
+			callback = eventsOrCallback as CallbackFunction;
+		}
+
+		const newCallback = (...args: any) => {
+			this.off(subject, events, newCallback);
+			callback(...args);
+		};
+
+		this.on(subject, events, newCallback, onTop);
+
+		return this;
+	}
+
 	/**
 	 * Disable all handlers specified event ( Event List ) for a given element. Either a specific event handler.
 	 *
@@ -450,9 +465,12 @@ export class EventsNative implements IEventsNative {
 	 * @param subjectOrEvents
 	 * @param eventsList
 	 */
-	stopPropagation(subjectOrEvents: string): void;
-	stopPropagation(subjectOrEvents: object, eventsList: string): void;
-	stopPropagation(subjectOrEvents: object | string, eventsList?: string) {
+	stopPropagation(events: string): void;
+	stopPropagation(subject: object, eventsList: string): void;
+	stopPropagation(
+		subjectOrEvents: object | string,
+		eventsList?: string
+	): void {
 		const subject: object = isString(subjectOrEvents)
 			? this
 			: subjectOrEvents;
@@ -485,6 +503,22 @@ export class EventsNative implements IEventsNative {
 					);
 			}
 		});
+	}
+
+	private __stopped: EventHandlerBlock[][] = [];
+
+	private removeStop(currentBlocks: EventHandlerBlock[]) {
+		if (currentBlocks) {
+			const index: number = this.__stopped.indexOf(currentBlocks);
+			index !== -1 && this.__stopped.splice(0, index + 1);
+		}
+	}
+
+	private isStopped(currentBlocks: EventHandlerBlock[]): boolean {
+		return (
+			currentBlocks !== undefined &&
+			this.__stopped.indexOf(currentBlocks) !== -1
+		);
 	}
 
 	/**

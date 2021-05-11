@@ -1,17 +1,18 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
+import type { HTMLTagNames, IDictionary, Nullable } from '../../types/';
 import { IS_IE } from '../constants';
-import { HTMLTagNames, IDictionary, Nullable } from '../../types/';
 import { isString } from './checker';
 import { attr } from './utils';
 import { error } from './type';
 import { Dom } from '../dom';
 import { camelCase } from './string';
 import { toArray } from './array';
+import { UIElement } from '../ui';
 
 let temp = 1;
 
@@ -53,6 +54,7 @@ export function $$<T extends HTMLElement>(
 	let result: NodeList;
 
 	if (
+		!isESNext &&
 		/:scope/.test(selector) &&
 		IS_IE &&
 		!(root && root.nodeType === Node.DOCUMENT_NODE)
@@ -60,7 +62,7 @@ export function $$<T extends HTMLElement>(
 		const id: string = (root as HTMLElement).id,
 			temp_id: string =
 				id ||
-				'_selector_id_' + ('' + Math.random()).slice(2) + $$temp();
+				'_selector_id_' + String(Math.random()).slice(2) + $$temp();
 
 		selector = selector.replace(/:scope/g, '#' + temp_id);
 
@@ -120,8 +122,12 @@ export const getXPathByElement = (
  * @param root
  */
 export const refs = <T extends HTMLElement>(
-	root: HTMLElement
+	root: HTMLElement | UIElement
 ): IDictionary<T> => {
+	if (root instanceof UIElement) {
+		root = root.container;
+	}
+
 	return $$('[ref],[data-ref]', root).reduce((def, child) => {
 		const key = attr(child, '-ref');
 

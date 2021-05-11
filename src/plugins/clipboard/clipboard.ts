@@ -1,10 +1,11 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { IJodit, IPlugin } from '../../types';
+import type { IJodit, IPlugin } from '../../types';
+import type { Plugin } from '../../core/plugin';
 import { TEXT_HTML, TEXT_PLAIN } from '../../core/constants';
 import { stripTags } from '../../core/helpers';
 import { getDataTransfer } from './paste/helpers';
@@ -17,7 +18,29 @@ export const pluginKey = 'clipboard';
 export class clipboard implements IPlugin {
 	jodit!: IJodit;
 
+	/** @override */
+	buttons: Plugin['buttons'] = [
+		{
+			name: 'cut',
+			group: 'clipboard'
+		},
+		{
+			name: 'copy',
+			group: 'clipboard'
+		},
+		{
+			name: 'paste',
+			group: 'clipboard'
+		},
+		{
+			name: 'selectall',
+			group: 'clipboard'
+		}
+	];
+
 	init(editor: IJodit): void {
+		this.buttons?.forEach(btn => editor.registerButton(btn));
+
 		editor.e
 			.off(`copy.${pluginKey} cut.${pluginKey}`)
 			.on(`copy.${pluginKey} cut.${pluginKey}`, (event: ClipboardEvent):
@@ -52,6 +75,7 @@ export class clipboard implements IPlugin {
 			});
 	}
 
+	/** @override */
 	destruct(editor: IJodit): void {
 		editor?.buffer?.set(pluginKey, '');
 		editor?.events?.off('.' + pluginKey);

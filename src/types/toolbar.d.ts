@@ -1,20 +1,20 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import {
+import type {
 	HTMLTagNames,
 	IComponent,
 	IDestructible,
 	IDictionary,
 	Modes,
-	Nullable
-} from './types';
-import { IViewBased } from './view';
-import { IJodit } from './jodit';
-import { IFileBrowser } from './file-browser';
+	Nullable,
+	IViewBased,
+	IJodit
+} from './';
+import type { IFileBrowser } from './file-browser';
 
 interface IControlType<
 	T = IJodit | IViewBased | IFileBrowser,
@@ -140,7 +140,7 @@ interface IControlType<
 	 *  });
 	 *  ```
 	 */
-	list?: IDictionary<string> | string[];
+	list?: IDictionary<string> | string[] | IControlType[];
 
 	/**
 	 * The command executes when the button is pressed. Allowed all
@@ -184,7 +184,9 @@ interface IControlType<
 	/**
 	 * Buttons hint
 	 */
-	tooltip?: string;
+	tooltip?:
+		| string
+		| ((editor: T, control: IControlType<T, B>, button?: B) => string);
 
 	/**
 	 * This function will be executed when the button is pressed.
@@ -245,6 +247,7 @@ interface IControlType<
 }
 
 import { IUIButton, IUIElement, IUIList } from './ui';
+import { IPluginButton } from './plugin';
 
 interface IControlTypeStrong extends IControlType {
 	name: NonNullable<IControlType['name']>;
@@ -254,11 +257,35 @@ interface IControlTypeContent extends IControlTypeStrong {
 	getContent: NonNullable<IControlTypeStrong['getContent']>;
 }
 
-export type Controls = IDictionary<IControlType>;
+export type Controls = IDictionary<IControlType | Controls>;
 
 export type Buttons = Array<string | IControlType>;
 
-export type ButtonsOption = Buttons | string;
+export type ButtonGroup =
+	| string
+	| 'source'
+	| 'font-style'
+	| 'script'
+	| 'list'
+	| 'indent'
+	| 'font'
+	| 'color'
+	| 'media'
+	| 'state'
+	| 'clipboard'
+	| 'insert'
+	| 'history'
+	| 'search'
+	| 'other'
+	| 'info';
+
+export interface ButtonsGroup {
+	group: ButtonGroup;
+	buttons: Buttons;
+}
+
+export type ButtonsGroups = Array<IControlType | string | ButtonsGroup>;
+export type ButtonsOption = string | ButtonsGroups;
 
 interface IControlTypeStrongList extends IControlTypeStrong {
 	list: IDictionary<string> | string[];
@@ -286,14 +313,15 @@ export interface IStatusBar extends IComponent {
 
 	show(): void;
 	hide(): void;
+	isShown: boolean;
+
 	getHeight(): number;
 	append(el: HTMLElement, inTheRight?: boolean): void;
 }
 
-export interface IProgressBar extends IDestructible {
-	jodit: IViewBased;
-
+export interface IProgressBar extends IUIElement {
 	show(): IProgressBar;
 	hide(): IProgressBar;
+
 	progress(percentage: number): IProgressBar;
 }

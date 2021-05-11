@@ -1,19 +1,30 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import {
+import type {
 	IAsync,
 	IComponent,
 	ICreate,
 	IProgressBar,
-	IStorage
+	IStorage,
+	IViewBased,
+	IViewOptions,
+	Nullable,
+	IDictionary
 } from '../../types';
-import { IViewBased, IViewOptions } from '../../types';
 import { Storage } from '../storage';
-import { error, i18n, isDestructable, isFunction, isVoid } from '../helpers';
+import {
+	camelCase,
+	ConfigProto,
+	error,
+	i18n,
+	isDestructable,
+	isFunction,
+	isVoid
+} from '../helpers';
 import { BASE_PATH } from '../constants';
 import {
 	Component,
@@ -27,11 +38,33 @@ import {
 import { Async } from '../async';
 import { modules } from '../global';
 import { hook } from '../decorators';
+import { Elms, Mods } from '../traits';
 
-export abstract class View
-	extends Component
-	implements IViewBased<IViewOptions> {
+export abstract class View extends Component implements IViewBased, Mods, Elms {
 	readonly isView: true = true;
+
+	readonly mods: IDictionary<string | boolean | null> = {};
+
+	/** @see [[Mods.setMod]] */
+	setMod(name: string, value: string | boolean | null): this {
+		Mods.setMod.call(this, name, value);
+		return this;
+	}
+
+	/** @see [[Mods.getMod]] */
+	getMod(name: string): string | boolean | null {
+		return Mods.getMod.call(this, name);
+	}
+
+	/** @see [[Elms.getElm]]*/
+	getElm(elementName: string): HTMLElement {
+		return Elms.getElm.call(this, elementName);
+	}
+
+	/** @see [[Elms.getElms]]*/
+	getElms(elementName: string): HTMLElement[] {
+		return Elms.getElms.call(this, elementName);
+	}
 
 	/**
 	 * @property{string} ID attribute for source element, id add {id}_editor it's editor's id
@@ -75,6 +108,12 @@ export abstract class View
 	 * @see copyformat plugin
 	 */
 	buffer: IStorage = Storage.makeStorage();
+
+	/**
+	 * Container for persistent set/get value
+	 * @type {Storage}
+	 */
+	readonly storage = Storage.makeStorage(true, this.componentName);
 
 	create!: ICreate;
 	get c(): this['create'] {
@@ -196,24 +235,45 @@ export abstract class View
 	 * Return current version
 	 */
 	getVersion(): string {
-		return this.version;
+		return appVersion;
+	}
+
+	static getVersion(): string {
+		return appVersion;
 	}
 
 	/** @override */
-	protected initOptions(options?: IViewOptions): void {
-		this.options = {
-			...(this.options || {}),
-			...View.defaultOptions,
-			...options
-		};
+	protected initOptions(options?: Partial<IViewOptions>): void {
+		this.options = ConfigProto(
+			options || {},
+			ConfigProto(this.options || {}, View.defaultOptions)
+		) as IViewOptions;
 	}
 
 	/**
 	 * Can change ownerWindow here
 	 */
-	protected initOwners(): void {}
+	protected initOwners(): void {
+		this.ownerWindow = this.o.ownerWindow ?? window;
+	}
 
-	constructor(options?: IViewOptions, readonly isJodit: boolean = false) {
+	/**
+	 * Add option's event handlers in emitter
+	 * @param options
+	 */
+	protected attachEvents(options?: IViewOptions): void {
+		if (!options) {
+			return;
+		}
+
+		const e = options?.events;
+		e && Object.keys(e).forEach((key: string) => this.e.on(key, e[key]));
+	}
+
+	protected constructor(
+		options?: Partial<IViewOptions>,
+		readonly isJodit: boolean = false
+	) {
 		super();
 
 		this.id = new Date().getTime().toString();
@@ -224,6 +284,7 @@ export abstract class View
 
 		this.events = new EventsNative(this.od);
 		this.create = new Create(this.od);
+
 		this.container = this.c.div();
 		this.container.classList.add('jodit');
 
@@ -239,6 +300,15 @@ export abstract class View
 	 * @param options
 	 */
 	getInstance<T extends IComponent>(moduleName: string, options?: object): T {
+		const instance: Nullable<T> = this.e.fire(
+			camelCase('getInstance_' + moduleName),
+			options
+		);
+
+		if (instance) {
+			return instance;
+		}
+
 		const module = modules[moduleName] as any,
 			mi = this.__modulesInstances;
 
@@ -260,12 +330,17 @@ export abstract class View
 		return mi.get(moduleName) as any;
 	}
 
+	/** Add some element to box */
+	protected addDisclaimer(elm: HTMLElement) {
+		this.container.appendChild(elm);
+	}
+
 	/**
 	 * Call before destruct
 	 */
 	@hook(STATUSES.beforeDestruct)
 	protected beforeDestruct(): void {
-		this.e.fire(STATUSES.beforeDestruct);
+		this.e.fire(STATUSES.beforeDestruct, this);
 
 		this.components.forEach(component => {
 			if (isDestructable(component) && !component.isInDestruct) {
@@ -305,6 +380,7 @@ export abstract class View
 View.defaultOptions = {
 	extraButtons: [],
 	textIcons: false,
+	namespace: '',
 	removeButtons: [],
 	zIndex: 100002,
 	defaultTimeout: 100,

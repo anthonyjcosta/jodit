@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 describe('Iframe mode', function () {
 	describe('Create editor with iframe mode', function () {
@@ -166,7 +166,7 @@ describe('Iframe mode', function () {
 						editHTMLDocumentMode: true,
 						iframe: true,
 						iframeStyle: '',
-						iframeCSSLinks: Jodit.Array([])
+						iframeCSSLinks: Jodit.atom([])
 					});
 					editor.value = 'Some text';
 
@@ -187,7 +187,7 @@ describe('Iframe mode', function () {
 							sourceEdiotor: 'area',
 							iframe: true,
 							iframeStyle: '',
-							iframeCSSLinks: Jodit.Array([])
+							iframeCSSLinks: Jodit.atom([])
 						});
 						editor.value = 'Some text';
 
@@ -205,12 +205,18 @@ describe('Iframe mode', function () {
 						editor.toggleMode();
 						expect(changeCounter).equals(3);
 
-						editor.__plugins.source.sourceEditor.instance.value = 'Some text3';
-						editor.e.fire('change', editor.__plugins.source.sourceEditor.instance);
+						editor.__plugins.source.sourceEditor.instance.value =
+							'Some text3';
+						editor.e.fire(
+							'change',
+							editor.__plugins.source.sourceEditor.instance
+						);
 						expect(changeCounter).equals(4);
 
 						editor.toggleMode();
-						editor.editor.appendChild(editor.createInside.text('x'));
+						editor.editor.appendChild(
+							editor.createInside.text('x')
+						);
 						simulateEvent('keydown', 'x', editor.editor);
 
 						expect(changeCounter).above(5);

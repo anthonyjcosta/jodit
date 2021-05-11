@@ -1,19 +1,20 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
+import type { Table } from '../../../../modules';
+import type { IControlType } from '../../../../types';
 import { isJoditObject, isString } from '../../../../core/helpers/checker';
-import { Table } from '../../../../modules';
 import { css } from '../../../../core/helpers';
 import { ColorPickerWidget, TabsWidget } from '../../../../modules/widget';
-import { IControlType } from '../../../../types';
 
 const cmd = (control: IControlType): string =>
 	control.args && isString(control.args[0])
 		? control.args[0].toLowerCase()
 		: '';
+
 export default [
 	{
 		name: 'brush',

@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import type {
@@ -11,7 +11,7 @@ import type {
 } from '../../../types';
 import { isFunction, $$, attr, val } from '../../../core/helpers';
 import { Dom } from '../../../core/dom';
-import { TabOption, TabsWidget } from '../';
+import { TabOption, TabsWidget } from '../tabs/tabs';
 import { UIBlock, UIForm, UIInput, UIButton } from '../../../core/ui';
 
 /**
@@ -146,7 +146,7 @@ export const FileSelectorWidget = (
 					label: 'URL',
 					name: 'url',
 					type: 'url',
-					placeholder: 'http://'
+					placeholder: 'https://'
 				}),
 				new UIInput(editor, {
 					name: 'text',

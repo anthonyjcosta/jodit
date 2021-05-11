@@ -1,14 +1,19 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { Buttons } from './toolbar';
-import { IDestructible, IDictionary, ImageBox, IPermissions } from './types';
-import { IUploader, IUploaderOptions } from './uploader';
-import { IViewOptions, IViewWithToolbar } from './view';
-import { IDialog, IStorage, ObservableObject } from '../types';
+import type { Buttons } from './toolbar';
+import type {
+	IDestructible,
+	IDictionary,
+	ImageBox,
+	IPermissions,
+	Nullable
+} from './types';
+import type { IUploader, IUploaderOptions } from './uploader';
+import type { IViewBased, IViewOptions } from './view';
 
 /**
  * The module creates a web browser dialog box. In a Web browser ,you can select an image, remove, drag it. Upload new
@@ -16,8 +21,8 @@ import { IDialog, IStorage, ObservableObject } from '../types';
  * @module FileBrowser
  * @params {Object} parent Jodit main object
  */
-
 export interface ISourceFile {
+	type: 'folder' | 'image' | 'file';
 	file?: string;
 	fileIsAbsolute?: boolean;
 	name?: string;
@@ -29,30 +34,35 @@ export interface ISourceFile {
 }
 
 export interface ISource {
+	name: string;
+	title?: string;
 	path: string;
 	baseurl: string;
 	files: ISourceFile[];
 	folders: string[];
 }
 
-export interface ISourcesFiles {
-	[key: string]: ISource;
-}
+export type ISourcesFiles = ISource[];
 
 export interface IFileBrowserAnswer {
 	success: boolean;
 	time: string;
+
 	data: {
 		messages?: string[];
 		sources: ISourcesFiles;
 		code: number;
 		path: string;
 		name: string;
+		title?: string;
 		source: string;
 		permissions?: IPermissions | null;
 	};
 }
 
+export interface IFileBrowserProcessor {
+	(resp: IFileBrowserAnswer): IFileBrowserAnswer;
+}
 export interface IFileBrowserAjaxOptions {
 	url?: string;
 	async?: boolean;
@@ -68,13 +78,10 @@ export interface IFileBrowserAjaxOptions {
 	headers?: IDictionary<string>;
 
 	prepareData?: (data: IDictionary<string>) => IDictionary<string>;
-
-	process?: (resp: IFileBrowserAnswer) => IFileBrowserAnswer;
+	process?: IFileBrowserProcessor;
 }
 
 export interface IFileBrowserOptions extends IViewOptions {
-	removeButtons: string[];
-	buttons: Buttons;
 	zIndex?: number;
 	fullsize?: boolean;
 	showTooltip?: boolean;
@@ -83,7 +90,7 @@ export interface IFileBrowserOptions extends IViewOptions {
 
 	sortBy: string;
 
-	sort: (a: any, b: any, sortBy?: string) => number;
+	sort: false | ((a: any, b: any, sortBy?: string) => number);
 
 	editImage: boolean;
 	preview: boolean;
@@ -94,6 +101,7 @@ export interface IFileBrowserOptions extends IViewOptions {
 	contextMenu: boolean;
 
 	howLongShowMsg: number;
+	pixelOffsetLoadNewChunk: number;
 
 	createNewFolder: boolean;
 	deleteFolder: boolean;
@@ -143,7 +151,6 @@ export interface IFileBrowserOptions extends IViewOptions {
 	uploader?: IUploaderOptions<IUploader>; // use default Uploader's settings
 
 	defaultCallback?(data: IFileBrowserCallBackData): void;
-	[key: string]: any;
 }
 
 export interface IFileBrowserCallBackData {
@@ -152,57 +159,57 @@ export interface IFileBrowserCallBackData {
 	isImages?: boolean[];
 }
 
+interface IFileBrowserDataProviderItemsMods {
+	onlyImages?: boolean;
+	withFolders?: boolean;
+	foldersPosition?: 'top' | 'bottom' | 'default';
+	filterWord?: string;
+	sortBy?: string;
+	offset?: number;
+	limit?: number;
+}
+
 export interface IFileBrowserDataProvider extends IDestructible {
+	permissions(path: string, source: string): Promise<Nullable<IPermissions>>;
+
 	getPathByUrl(
-		url: string,
-		success: (path: string, name: string, source: string) => void,
-		onFailed: (error: Error) => void
-	): Promise<IFileBrowserAnswer>;
+		url: string
+	): Promise<{ path: string; name: string; source: string }>;
 
-	tree(path: string, source: string): Promise<IFileBrowserAnswer>;
-
-	items(path: string, source: string): Promise<IFileBrowserAnswer>;
-
-	permissions(path: string, source: string): Promise<any>;
-
-	createFolder(
-		name: string,
+	items(
 		path: string,
-		source: string
-	): Promise<IFileBrowserAnswer>;
+		source: string,
+		mods?: IFileBrowserDataProviderItemsMods
+	): Promise<IFileBrowserItem[]>;
+
+	tree(path: string, source: string): Promise<ISourcesFiles>;
+
+	createFolder(name: string, path: string, source: string): Promise<boolean>;
 
 	move(
 		filepath: string,
 		path: string,
 		source: string,
 		isFile: boolean
-	): Promise<IFileBrowserAnswer>;
+	): Promise<boolean>;
 
-	fileRemove(
-		path: string,
-		file: string,
-		source: string
-	): Promise<IFileBrowserAnswer>;
+	fileRemove(path: string, file: string, source: string): Promise<string>;
 
-	folderRemove(
-		path: string,
-		file: string,
-		source: string
-	): Promise<IFileBrowserAnswer>;
+	folderRemove(path: string, file: string, source: string): Promise<string>;
 
 	folderRename(
 		path: string,
 		name: string,
 		newname: string,
 		source: string
-	): Promise<IFileBrowserAnswer>;
+	): Promise<string>;
 
 	fileRename(
 		path: string,
 		name: string,
 		newname: string,
 		source: string
-	): Promise<IFileBrowserAnswer>;
+	): Promise<string>;
 
 	resize(
 		path: string,
@@ -210,7 +217,7 @@ export interface IFileBrowserDataProvider extends IDestructible {
 		name: string,
 		newname: string | void,
 		box: ImageBox | void
-	): Promise<IFileBrowserAnswer>;
+	): Promise<boolean>;
 
 	crop(
 		path: string,
@@ -218,50 +225,37 @@ export interface IFileBrowserDataProvider extends IDestructible {
 		name: string,
 		newname: string | void,
 		box: ImageBox | void
-	): Promise<IFileBrowserAnswer>;
+	): Promise<boolean>;
 
 	canI(action: string): boolean;
+
+	isSuccess: (resp: IFileBrowserAnswer) => boolean;
+	getMessage: (resp: IFileBrowserAnswer) => string;
+
+	onProgress(callback: (percentage: number) => void): void;
 }
 
-export interface IFileBrowser extends IViewWithToolbar<IFileBrowserOptions> {
-	uploader: IUploader;
-	dataProvider: IFileBrowserDataProvider;
+export interface IFileBrowser<
+	T extends IFileBrowserOptions = IFileBrowserOptions
+> extends IViewBased<T> {
+	readonly dataProvider: IFileBrowserDataProvider;
+	readonly state: IFileBrowserState;
 
-	state: ObservableObject<IFileBrowserState>;
-
-	tree: HTMLElement;
-	files: HTMLElement;
-	elementsMap: IDictionary<{
-		elm: HTMLElement;
-		item: IFileBrowserItem;
-	}>;
-
-	storage: IStorage;
-	dialog: IDialog;
-
-	isOpened(): boolean;
-
-	close: () => void;
-
-	openImageEditor(
-		href: string,
-		name: string,
-		path: string,
-		source: string,
-		onSuccess?: () => void,
-		onFailed?: (error: Error) => void
-	): Promise<IDialog>;
+	isOpened: boolean;
 
 	open(
 		callback?: (data: IFileBrowserCallBackData) => void,
 		onlyImages?: boolean
 	): Promise<void>;
 
-	status(message: string | Error, success?: boolean): void;
+	close(): void;
 
-	loadTree(): Promise<any>;
-	loadItems(path?: string, source?: string): Promise<any>;
-	deleteFile(name: string, source: string): Promise<any>;
+	status(message: string | Error, success?: boolean): void;
+}
+
+export interface IFileBrowserMessage {
+	message: string;
+	type: 'success' | 'error';
 }
 
 export interface IFileBrowserState {
@@ -269,7 +263,7 @@ export interface IFileBrowserState {
 	currentSource: string;
 	currentBaseUrl: string;
 
-	view: 'tiles' | 'list';
+	view: 'tiles' | 'list' | 'compact';
 	sortBy: string;
 	filterWord: string;
 	onlyImages: boolean;
@@ -277,12 +271,14 @@ export interface IFileBrowserState {
 	elements: IFileBrowserItem[];
 	activeElements: IFileBrowserItem[];
 	sources: ISourcesFiles;
+
+	messages: IFileBrowserMessage[];
 }
 
 export interface IFileBrowserFolder {
 	name: string;
 	source: ISource;
-	sourceName: string;
+	children: IFileBrowserFolder[];
 }
 
 export interface IFileBrowserItemElement extends ISourceFile {
@@ -290,7 +286,7 @@ export interface IFileBrowserItemElement extends ISourceFile {
 	sourceName: string;
 }
 
-export interface IFileBrowserItemWrapper {
+export interface IFileBrowserItemWrapper extends IFileBrowserItemElement {
 	path: string;
 	fileURL: string;
 	imageURL: string;

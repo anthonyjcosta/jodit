@@ -1,15 +1,19 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { IViewOptions } from './view';
+import { IViewBased, IViewOptions } from './view';
 import { IComponent, IContainer } from './types';
+import type { Mods } from '../core/traits';
 
 export interface IDialogOptions extends IViewOptions {
 	resizable?: boolean;
 	draggable?: boolean;
+	maxWidth?: string | number;
+	minWidth?: string | number;
+	minHeight?: string | number;
 }
 
 export type ContentItem = string | HTMLElement | IContainer;
@@ -18,8 +22,9 @@ export type Content =
 	| ContentItem[]
 	| Array<ContentItem | ContentItem[]>;
 
-export interface IDialog extends IComponent, IContainer {
+export interface IDialog extends IComponent, IContainer, Mods, IViewBased {
 	isOpened: boolean;
+	dialog: HTMLElement;
 
 	open(destroyAfter: boolean): this;
 	open(destroyAfter: boolean, modal: boolean): this;
@@ -33,6 +38,8 @@ export interface IDialog extends IComponent, IContainer {
 	close(): this;
 
 	setSize(w?: number | string, h?: number | string): this;
+	calcAutoSize(): this;
+
 	setPosition(x?: number, y?: number): this;
 	setHeader(content: Content): this;
 	setContent(content: Content): this;

@@ -1,13 +1,13 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { IDictionary, ILanguageOptions } from '../../../types';
+import type { IDictionary, ILanguageOptions } from '../../../types';
 import { Config } from '../../../config';
 import { defaultLanguage as defineLanguage } from '../default-language';
-import { ucfirst, isString, error } from '../index';
+import { ucfirst, isString, error } from '../';
 import { lang } from '../../global';
 
 /**
@@ -73,6 +73,10 @@ export const i18n = (
 ): string => {
 	if (!isString(key)) {
 		throw error('i18n: Need string in first argument');
+	}
+
+	if (!key.length) {
+		return key;
 	}
 
 	const debug: boolean = Boolean(

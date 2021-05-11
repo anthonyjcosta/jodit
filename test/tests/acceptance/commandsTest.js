@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 describe('Commands Jodit Editor Tests', function () {
 	describe('Command "formatBlock"', function () {
@@ -23,7 +23,7 @@ describe('Commands Jodit Editor Tests', function () {
 		});
 
 		describe('Exec formatBlock for one inline element', function () {
-			it('Should wrap this element and all nearest inine element in block', function () {
+			it('Should wrap this element and all nearest inline element in block', function () {
 				const jodit = getJodit();
 				jodit.value = 'stop <span>post</span> ice';
 				const range = jodit.ed.createRange();
@@ -35,6 +35,21 @@ describe('Commands Jodit Editor Tests', function () {
 
 				expect(jodit.value).equals(
 					'<h1>stop <span>post</span> ice</h1>'
+				);
+			});
+		});
+
+		describe('Exec formatBlock for STYLED block', function () {
+			it('Should wrap this element and save previous styles', function () {
+				const jodit = getJodit();
+				jodit.value =
+					'<p style="text-align: right">|stop <span>post</span> ice</p>';
+				setCursorToChar(jodit);
+
+				jodit.execCommand('formatBlock', false, 'h1');
+
+				expect(jodit.value).equals(
+					'<h1 style="text-align: right">stop <span>post</span> ice</h1>'
 				);
 			});
 		});
@@ -567,7 +582,6 @@ describe('Commands Jodit Editor Tests', function () {
 
 						simulateEvent(
 							'mousedown',
-							0,
 							editor.editor.querySelector('td')
 						);
 
@@ -577,7 +591,7 @@ describe('Commands Jodit Editor Tests', function () {
 
 						editor.execCommand('justifyright');
 
-						simulateEvent('mousedown', 0, editor.editor.firstChild);
+						simulateEvent('click', editor.editor);
 
 						editor.execCommand('selectall');
 						editor.execCommand('justifyfull');

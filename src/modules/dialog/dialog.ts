@@ -1,37 +1,35 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import './dialog.less';
 
-import autobind from 'autobind-decorator';
-
-import { Config, OptionsDefault } from '../../config';
-import {
+import type {
 	IControlType,
-	IDialogOptions,
 	IDictionary,
 	IToolbarCollection,
 	IContainer,
 	IDialog,
 	ContentItem,
 	Content,
-	IViewOptions
+	IDialogOptions
 } from '../../types/';
+import { Config } from '../../config';
 import { KEY_ESC } from '../../core/constants';
 import {
 	$$,
 	asArray,
 	attr,
+	ConfigProto,
 	css,
-	extend,
 	hasContainer,
 	isArray,
 	isBoolean,
 	isFunction,
 	isString,
+	isVoid,
 	splitArray,
 	toArray
 } from '../../core/helpers/';
@@ -39,6 +37,8 @@ import { ViewWithToolbar } from '../../core/view/view-with-toolbar';
 import { Dom } from '../../core/dom';
 import { STATUSES } from '../../core/component';
 import { eventEmitter, pluginSystem } from '../../core/global';
+import { component, autobind, hook } from '../../core/decorators';
+import { View } from '../../core/view/view';
 
 /**
  * @property {object} dialog module settings {@link Dialog|Dialog}
@@ -56,6 +56,7 @@ declare module '../../config' {
 }
 
 Config.prototype.dialog = {
+	namespace: '',
 	extraButtons: [],
 	resizable: true,
 	draggable: true,
@@ -79,17 +80,26 @@ Config.prototype.controls.dialog = {
  * @param {Object} parent Jodit main object
  * @param {Object} [opt] Extend Options
  */
+@component
 export class Dialog extends ViewWithToolbar implements IDialog {
+	/** @override */
+	className(): string {
+		return 'Dialog';
+	}
+
 	/**
 	 * @property {HTMLDivElement} resizer
 	 */
-	private resizer!: HTMLDivElement;
+	private resizer!: HTMLElement;
 	toolbar!: IToolbarCollection;
 
 	private offsetX?: number;
 	private offsetY?: number;
 
-	private destination: HTMLElement = document.body;
+	private get destination(): HTMLElement {
+		return this.od.body;
+	}
+
 	private destroyAfterClose: boolean = false;
 
 	private moved: boolean = false;
@@ -103,22 +113,20 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 	private startPoint = { x: 0, y: 0, w: 0, h: 0 };
 
 	private lockSelect = () => {
-		this.container.classList.add('jodit-dialog__box-moved');
-	};
-	private unlockSelect = () => {
-		this.container.classList.remove('jodit-dialog__box-moved');
+		this.setMod('moved', true);
 	};
 
-	private setElements(
-		root: HTMLDivElement | HTMLHeadingElement,
-		elements: Content
-	) {
+	private unlockSelect = () => {
+		this.setMod('moved', false);
+	};
+
+	private setElements(root: HTMLElement, elements: Content) {
 		const elements_list: HTMLElement[] = [];
 
 		asArray<ContentItem | ContentItem[] | IContainer>(elements).forEach(
 			(elm: ContentItem | ContentItem[] | IContainer): any => {
 				if (isArray(elm)) {
-					const div = this.c.div('jodit-dialog__column');
+					const div = this.c.div(this.getFullElName('column'));
 
 					elements_list.push(div);
 					root.appendChild(div);
@@ -159,7 +167,7 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 			this.unlockSelect();
 
 			if (this.e) {
-				this.removeGlobalListeners();
+				this.removeGlobalResizeListeners();
 
 				/**
 				 * Fired when dialog box is finished to resizing
@@ -196,7 +204,7 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 
 		this.lockSelect();
 
-		this.addGlobalListeners();
+		this.addGlobalResizeListeners();
 
 		if (this.e) {
 			/**
@@ -231,7 +239,6 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 			}
 
 			e.stopImmediatePropagation();
-			e.preventDefault();
 		}
 
 		if (this.resizable && this.o.resizable) {
@@ -254,15 +261,16 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 					e.clientY - this.startY
 				);
 			}
-
-			e.stopImmediatePropagation();
-			e.preventDefault();
 		}
 	}
 
 	@autobind
 	private onEsc(e: KeyboardEvent): void {
-		if (this.isOpened && e.key === KEY_ESC) {
+		if (
+			this.isOpened &&
+			e.key === KEY_ESC &&
+			this.getMod('static') !== true
+		) {
 			const me = this.getMaxZIndexDialog();
 
 			if (me) {
@@ -293,12 +301,13 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 		this.resizable = true;
 		this.startX = e.clientX;
 		this.startY = e.clientY;
+
 		this.startPoint.w = this.dialog.offsetWidth;
 		this.startPoint.h = this.dialog.offsetHeight;
 
 		this.lockSelect();
 
-		this.addGlobalListeners();
+		this.addGlobalResizeListeners();
 
 		if (this.e) {
 			/**
@@ -309,7 +318,7 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 		}
 	}
 
-	private addGlobalListeners(): void {
+	private addGlobalResizeListeners(): void {
 		const self = this;
 
 		self.e
@@ -317,7 +326,7 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 			.on(self.ow, 'mouseup', self.onMouseUp);
 	}
 
-	private removeGlobalListeners(): void {
+	private removeGlobalResizeListeners(): void {
 		const self = this;
 
 		self.e
@@ -330,14 +339,14 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 	/**
 	 * @property {HTMLDivElement} dialog
 	 */
-	dialog!: HTMLDivElement;
+	dialog!: HTMLElement;
 
 	workplace!: HTMLDivElement;
 
-	private dialogbox_header!: HTMLHeadingElement;
-	private dialogbox_content!: HTMLDivElement;
-	private dialogbox_footer!: HTMLDivElement;
-	private dialogbox_toolbar!: HTMLDivElement;
+	private dialogbox_header!: HTMLElement;
+	private dialogbox_content!: HTMLElement;
+	private dialogbox_footer!: HTMLElement;
+	private dialogbox_toolbar!: HTMLElement;
 
 	/**
 	 * Specifies the size of the window
@@ -346,12 +355,28 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 	 * @param {number} [h] - The height of the window
 	 */
 	setSize(w?: number | string, h?: number | string): this {
-		if (w) {
-			css(this.dialog, 'width', w);
+		if (w == null) {
+			w = this.dialog.offsetWidth;
 		}
-		if (h) {
-			css(this.dialog, 'height', h);
+
+		if (h == null) {
+			h = this.dialog.offsetHeight;
 		}
+
+		css(this.dialog, {
+			width: w,
+			height: h
+		});
+
+		return this;
+	}
+
+	/**
+	 * Recalculate auto sizes
+	 */
+	calcAutoSize(): this {
+		this.setSize('auto', 'auto');
+		this.setSize();
 
 		return this;
 	}
@@ -364,11 +389,11 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 	 * @param {Number} [y] - Position px Vertical
 	 */
 	setPosition(x?: number, y?: number): this {
-		const w: number = this.ow.innerWidth,
-			h: number = this.ow.innerHeight;
+		const w = this.ow.innerWidth,
+			h = this.ow.innerHeight;
 
-		let left: number = w / 2 - this.dialog.offsetWidth / 2,
-			top: number = h / 2 - this.dialog.offsetHeight / 2;
+		let left = w / 2 - this.dialog.offsetWidth / 2,
+			top = h / 2 - this.dialog.offsetHeight / 2;
 
 		if (left < 0) {
 			left = 0;
@@ -447,7 +472,7 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 	 */
 	setFooter(content: Content): this {
 		this.setElements(this.dialogbox_footer, content);
-		this.dialog.classList.toggle('jodit-dialog_footer_true', !!content);
+		this.setMod('footer', Boolean(content));
 		return this;
 	}
 
@@ -469,17 +494,15 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 			zIndex: number,
 			res: IDialog = this;
 
-		$$('.jodit-dialog__box', this.destination).forEach(
-			(dialog: HTMLElement) => {
-				dlg = (dialog as any).component as Dialog;
-				zIndex = parseInt(css(dialog, 'zIndex') as string, 10);
+		$$('.jodit-dialog', this.destination).forEach((dialog: HTMLElement) => {
+			dlg = (dialog as any).component as Dialog;
+			zIndex = parseInt(css(dialog, 'zIndex') as string, 10);
 
-				if (dlg.isOpened && !isNaN(zIndex) && zIndex > maxZi) {
-					res = dlg;
-					maxZi = zIndex;
-				}
+			if (dlg.isOpened && !isNaN(zIndex) && zIndex > maxZi) {
+				res = dlg;
+				maxZi = zIndex;
 			}
-		);
+		});
 
 		return res;
 	}
@@ -491,7 +514,7 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 		let maxZIndex: number = 20000004,
 			zIndex: number = 0;
 
-		$$('.jodit-dialog__box', this.destination).forEach(dialog => {
+		$$('.jodit-dialog', this.destination).forEach(dialog => {
 			zIndex = parseInt(css(dialog, 'zIndex') as string, 10);
 			maxZIndex = Math.max(isNaN(zIndex) ? 0 : zIndex, maxZIndex);
 		});
@@ -506,35 +529,27 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 	 * @return {boolean} true - fullsize
 	 */
 	maximization(condition?: boolean): boolean {
-		if (typeof condition !== 'boolean') {
-			condition = !this.container.classList.contains(
-				'jodit-dialog__box_fullsize'
-			);
+		if (isVoid(condition)) {
+			condition = !this.getMod('fullsize');
 		}
 
-		this.container.classList.toggle(
-			'jodit-dialog__box_fullsize',
-			condition
-		);
+		this.setMod('fullsize', condition);
 
 		this.toggleFullSizeBox(condition);
-
 		this.iSetMaximization = condition;
 
 		return condition;
 	}
 
 	toggleFullSizeBox(condition: boolean): void {
-		[this.destination, this.destination.parentNode].forEach(
-			(box: Node | null) => {
-				box &&
-					(box as HTMLElement).classList &&
-					(box as HTMLElement).classList.toggle(
-						'jodit_fullsize-box_true',
-						condition
-					);
-			}
-		);
+		[this.destination, this.destination.parentNode].forEach(box => {
+			box &&
+				(box as HTMLElement).classList &&
+				(box as HTMLElement).classList.toggle(
+					'jodit_fullsize-box_true',
+					condition
+				);
+		});
 	}
 
 	open(destroyAfterClose: boolean): this;
@@ -598,7 +613,7 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 			this.setContent(content);
 		}
 
-		this.container.classList.add('jodit-dialog_active');
+		this.setMod('active', true);
 		this.isOpened = true;
 
 		this.setModal(modal);
@@ -606,6 +621,7 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 		this.destination.appendChild(this.container);
 
 		this.setPosition(this.offsetX, this.offsetY);
+
 		this.setMaxZIndex();
 
 		if (this.o.fullsize) {
@@ -621,12 +637,16 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 		return this;
 	}
 
+	private isModal: boolean = false;
+
 	/**
 	 * Set modal mode
 	 * @param modal
 	 */
 	setModal(modal: undefined | boolean): this {
-		this.container.classList.toggle('jodit-modal', Boolean(modal));
+		this.isModal = Boolean(modal);
+		this.setMod('modal', this.isModal);
+
 		return this;
 	}
 
@@ -660,7 +680,11 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 	 */
 	@autobind
 	close(e?: MouseEvent): this {
-		if (this.isDestructed || !this.isOpened) {
+		if (
+			this.isDestructed ||
+			!this.isOpened ||
+			this.getMod('static') === true
+		) {
 			return this;
 		}
 
@@ -679,16 +703,18 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 			this.e.fire('beforeClose', this);
 		}
 
-		Dom.safeRemove(this.container);
-		this?.container?.classList.remove('jodit-dialog_active');
+		this.setMod('active', false);
 
 		this.isOpened = false;
 
+		this.e.fire('toggleFullSize', false);
 		if (this.iSetMaximization) {
 			this.maximization(false);
 		}
 
-		this.removeGlobalListeners();
+		Dom.safeRemove(this.container);
+
+		this.removeGlobalResizeListeners();
 
 		if (this.destroyAfterClose) {
 			this.destruct();
@@ -706,41 +732,41 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 		return this;
 	}
 
-	constructor(options?: IViewOptions) {
+	constructor(options?: Partial<IDialogOptions>) {
 		super(options);
 
 		const self: Dialog = this;
 
-		self.options = new OptionsDefault(
-			extend(
-				true,
+		self.options = ConfigProto(
+			options ?? {},
+
+			ConfigProto(
 				{
 					toolbarButtonSize: 'middle'
 				},
-				Config.prototype.dialog,
-				options
+				ConfigProto(Config.prototype.dialog, View.defaultOptions)
 			)
 		) as IDialogOptions;
 
 		Dom.safeRemove(self.container);
 
+		const n = this.getFullElName.bind(this);
+
 		self.container = this.c.fromHTML(
-			'<div style="z-index:' +
-				self.o.zIndex +
-				'" class="jodit jodit-dialog__box">' +
-				'<div class="jodit-dialog__overlay"></div>' +
-				'<div class="jodit-dialog">' +
-				'<div class="jodit-dialog__header non-selected">' +
-				'<div class="jodit-dialog__header-title"></div>' +
-				'<div class="jodit-dialog__header-toolbar"></div>' +
-				'</div>' +
-				'<div class="jodit-dialog__content"></div>' +
-				'<div class="jodit-dialog__footer"></div>' +
-				(self.o.resizable
-					? '<div class="jodit-dialog__resizer"></div>'
-					: '') +
-				'</div>' +
-				'</div>'
+			`<div style="z-index:${self.o.zIndex}" class="jodit jodit-dialog ${
+				this.componentName
+			}">
+				<div class="${n('overlay')}"></div>
+				<div class="${this.getFullElName('panel')}">
+					<div class="${n('header')}">
+						<div class="${n('header-title')}"></div>
+						<div class="${n('header-toolbar')}"></div>
+					</div>
+					<div class="${n('content')}"></div>
+					<div class="${n('footer')}"></div>
+					${self.o.resizable ? `<div class="${n('resizer')}"></div>` : ''}
+				</div>
+			</div>`
 		) as HTMLDivElement;
 
 		attr(self.container, 'role', 'dialog');
@@ -749,42 +775,22 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 			value: this
 		});
 
-		self.container.classList.add(
-			`jodit_theme_${this.o.theme || 'default'}`
-		);
+		self.setMod('theme', self.o.theme || 'default');
+		self.dialog = self.getElm('panel');
 
-		self.dialog = self.container.querySelector(
-			'.jodit-dialog'
-		) as HTMLDivElement;
+		css(self.dialog, {
+			maxWidth: self.options.maxWidth,
+			minHeight: self.options.minHeight,
+			minWidth: self.options.minWidth
+		});
 
-		self.resizer = self.container.querySelector(
-			'.jodit-dialog__resizer'
-		) as HTMLDivElement;
+		self.resizer = self.getElm('resizer');
+		self.dialogbox_header = self.getElm('header-title');
+		self.dialogbox_content = self.getElm('content');
+		self.dialogbox_footer = self.getElm('footer');
+		self.dialogbox_toolbar = self.getElm('header-toolbar');
 
-		self.dialogbox_header = self.container.querySelector(
-			'.jodit-dialog__header>.jodit-dialog__header-title'
-		) as HTMLHeadingElement;
-
-		self.dialogbox_content = self.container.querySelector(
-			'.jodit-dialog__content'
-		) as HTMLDivElement;
-
-		self.dialogbox_footer = self.container.querySelector(
-			'.jodit-dialog__footer'
-		) as HTMLDivElement;
-
-		self.dialogbox_toolbar = self.container.querySelector(
-			'.jodit-dialog__header>.jodit-dialog__header-toolbar'
-		) as HTMLDivElement;
-
-		self.o.buttons &&
-			self.toolbar
-				.build(splitArray(self.o.buttons))
-				.appendTo(self.dialogbox_toolbar);
-
-		const headerBox: HTMLDivElement | null = self.container.querySelector(
-			'.jodit-dialog__header'
-		);
+		const headerBox = self.getElm('header');
 
 		headerBox && self.e.on(headerBox, 'mousedown', self.onHeaderMouseDown);
 
@@ -795,12 +801,22 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 		const fullSize = pluginSystem.get('fullsize') as Function;
 		isFunction(fullSize) && fullSize(self);
 
-		self.setStatus(STATUSES.ready);
-
 		this.e
 			.on(self.container, 'close_dialog', self.close)
 			.on(this.ow, 'keydown', this.onEsc)
 			.on(this.ow, 'resize', this.onResize);
+	}
+
+	/**
+	 * Build toolbar after ready
+	 */
+	@hook('ready')
+	protected buildToolbar(): void {
+		this.o.buttons &&
+			this.toolbar
+				.build(splitArray(this.o.buttons))
+				.setMod('mode', 'header')
+				.appendTo(this.dialogbox_toolbar);
 	}
 
 	/**
@@ -818,7 +834,7 @@ export class Dialog extends ViewWithToolbar implements IDialog {
 		}
 
 		if (this.events) {
-			this.removeGlobalListeners();
+			this.removeGlobalResizeListeners();
 
 			this.events
 				.off(this.container, 'close_dialog', self.close)

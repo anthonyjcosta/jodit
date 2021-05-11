@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 describe('Font test', function () {
 	describe('FontName', function () {
@@ -66,8 +66,9 @@ describe('Font test', function () {
 					expect(list).is.not.null;
 
 					const buttons = list.querySelectorAll('button'),
-						font = buttons[buttons.length - 1];
-					simulateEvent('click', 0, font);
+						font = buttons[0];
+
+					simulateEvent('click', font);
 
 					expect(sortAttributes(editor.value)).equals(
 						sortAttributes(

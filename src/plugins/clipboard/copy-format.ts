@@ -1,13 +1,13 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
+import type { IDictionary, IJodit, IControlType } from '../../types';
 import { Config } from '../../config';
 import { Dom } from '../../core/dom';
 import { css } from '../../core/helpers/';
-import { IDictionary, IJodit, IControlType } from '../../types';
 
 const pluginKey = 'copyformat';
 
@@ -138,3 +138,10 @@ Config.prototype.controls.copyformat = {
 
 	tooltip: 'Paint format'
 } as IControlType;
+
+export function copyFormat(editor: IJodit): void {
+	editor.registerButton({
+		name: 'copyformat',
+		group: 'clipboard'
+	});
+}

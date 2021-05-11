@@ -1,10 +1,10 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { IDictionary } from '../../types';
+import type { IDictionary } from '../../types';
 
 const class2type: IDictionary<string> = {};
 const toString = class2type.toString;
@@ -38,6 +38,7 @@ export const hasOwn = class2type.hasOwnProperty;
  * @param obj
  */
 export const type = (obj: any): string => {
+	// eslint-disable-next-line eqeqeq
 	if (obj === null) {
 		return 'null';
 	}

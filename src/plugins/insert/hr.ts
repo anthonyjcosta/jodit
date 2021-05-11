@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import type { IControlType, IJodit } from '../../types';
@@ -15,6 +15,11 @@ Config.prototype.controls.hr = {
 } as IControlType;
 
 export function hr(editor: IJodit): void {
+	editor.registerButton({
+		name: 'hr',
+		group: 'insert'
+	});
+
 	editor.registerCommand('insertHorizontalRule', () => {
 		const elm = editor.createInside.element('hr');
 		editor.s.insertNode(elm, false, false);

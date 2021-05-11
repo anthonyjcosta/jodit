@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 /**
@@ -15,7 +15,7 @@
  * @return {{top: number, left: number}} returns an object containing the properties top and left.
  */
 
-import { IBound, IHasScroll, IJodit, IViewBased } from '../../../types';
+import type { IBound, IHasScroll, IJodit, IViewBased } from '../../../types';
 
 export const offset = (
 	elm: HTMLElement | Range,

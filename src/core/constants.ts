@@ -1,10 +1,10 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { IDictionary } from '../types';
+import type { IDictionary } from '../types';
 
 export const INVISIBLE_SPACE = '\uFEFF';
 export const NBSP_SPACE = '\u00A0';
@@ -16,7 +16,7 @@ export const SPACE_REG_EXP = (): RegExp => /[\s\n\t\r\uFEFF\u200b]+/g;
 export const SPACE_REG_EXP_START = (): RegExp => /^[\s\n\t\r\uFEFF\u200b]+/g;
 export const SPACE_REG_EXP_END = (): RegExp => /[\s\n\t\r\uFEFF\u200b]+$/g;
 
-export const IS_BLOCK = /^(ARTICLE|SCRIPT|IFRAME|JODIT|JODIT-MEDIA|PRE|DIV|P|LI|UL|OL|H[1-6]|BLOCKQUOTE|TR|TD|TH|TBODY|THEAD|TABLE|BODY|HTML|FIGCAPTION|FIGURE|DT|DD|DL|DFN)$/i;
+export const IS_BLOCK = /^(ARTICLE|SCRIPT|STYLE|OBJECT|FOOTER|HEADER|NAV|SECTION|IFRAME|JODIT|JODIT-MEDIA|PRE|DIV|P|LI|UL|OL|H[1-6]|BLOCKQUOTE|TR|TD|TH|TBODY|THEAD|TABLE|BODY|HTML|FIGCAPTION|FIGURE|DT|DD|DL|DFN)$/i;
 export const IS_INLINE = /^(STRONG|SPAN|I|EM|B|SUP|SUB)$/i;
 
 export const INSEPARABLE_TAGS: Array<keyof HTMLElementTagNameMap> = [
@@ -47,6 +47,7 @@ export const KEY_LEFT = 'ArrowLeft';
 export const KEY_UP = 'ArrowUp';
 export const KEY_RIGHT = 'ArrowRight';
 export const KEY_DOWN = 'ArrowDown';
+export const KEY_SPACE = 'Space';
 
 export const KEY_DELETE = 'Delete';
 

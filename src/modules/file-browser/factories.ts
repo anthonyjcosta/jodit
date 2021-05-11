@@ -1,13 +1,14 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import {
+import type {
 	IContextMenu,
 	IFileBrowserDataProvider,
 	IFileBrowserOptions,
+	IUIElement,
 	IViewBased
 } from '../../types';
 import DataProvider from './data-provider';
@@ -20,6 +21,6 @@ export function makeDataProvider(
 	return new DataProvider(parent, options);
 }
 
-export function makeContextMenu(parent: IViewBased): IContextMenu {
+export function makeContextMenu(parent: IViewBased): IContextMenu & IUIElement {
 	return new ContextMenu(parent);
 }

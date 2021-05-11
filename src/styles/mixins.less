@@ -1,14 +1,14 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 @import (reference) './variables';
 
-.size (@width, @height) {
-	width: @width;
-	height: @height;
+.size (@size) {
+	width: @size;
+	height: @size;
 }
 
 .font() {
@@ -68,14 +68,31 @@
 }
 
 .jodit-box() {
-	background: 0 0;
-	border: 0;
-	float: none;
-	height: auto;
-	margin: 0;
-	max-width: none;
-	outline: 0;
-	padding: 0;
 	position: static;
 	width: auto;
+	max-width: none;
+	height: auto;
+	padding: 0;
+	border: 0;
+	margin: 0;
+	background: 0 0;
+	float: none;
+	outline: 0;
+}
+
+.scrollbarSlim() {
+	&::-webkit-scrollbar {
+		width: calc(var(--padding-default) / 2);
+	}
+
+	&::-webkit-scrollbar-track {
+		-webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+	}
+
+	&::-webkit-scrollbar-thumb {
+		background-color: darkgrey;
+		outline: 1px solid slategrey;
+	}
+
+	overflow-anchor: auto;
 }

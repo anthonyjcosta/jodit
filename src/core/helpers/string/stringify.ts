@@ -1,10 +1,10 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { CanUndef } from '../../../types';
+import type { CanUndef } from '../../../types';
 
 /**
  * Safe stringify circular object
@@ -22,6 +22,7 @@ export function stringify(
 	if (typeof value !== 'object') {
 		return value.toString ? value.toString() : value;
 	}
+
 	const excludeKeys = new Set(options.excludeKeys);
 
 	const map = new WeakMap();
@@ -31,7 +32,7 @@ export function stringify(
 			return;
 		}
 
-		if (typeof v === 'object' && v !== null) {
+		if (typeof v === 'object' && v != null) {
 			if (map.get(v)) {
 				return '[refObject]';
 			}

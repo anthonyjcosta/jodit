@@ -1,10 +1,8 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
-
-import autobind from 'autobind-decorator';
 
 import * as consts from '../constants';
 import {
@@ -32,11 +30,11 @@ import {
 	isString,
 	$$,
 	css,
-	isArray,
 	call,
 	toArray
 } from '../helpers';
 import { Style } from './style/style';
+import { autobind } from '../decorators';
 
 type WindowSelection = Selection | null;
 
@@ -203,9 +201,17 @@ export class Select {
 	 */
 	isMarker = (elm: Node): boolean =>
 		Dom.isNode(elm, this.win) &&
-		Dom.isElement(elm) &&
 		Dom.isTag(elm, 'span') &&
 		elm.hasAttribute('data-' + consts.MARKER_CLASS);
+
+	/**
+	 * Check if editor has selection markers
+	 */
+	get hasMarkers(): boolean {
+		return Boolean(
+			$$('span[data-' + consts.MARKER_CLASS + ']', this.area).length
+		);
+	}
 
 	/**
 	 * Remove all markers
@@ -230,14 +236,14 @@ export class Select {
 			newRange.collapse(atStart);
 		}
 
-		const marker: HTMLSpanElement = this.j.createInside.span();
+		const marker = this.j.createInside.span();
 
 		marker.id =
 			consts.MARKER_CLASS +
 			'_' +
-			+new Date() +
+			Number(new Date()) +
 			'_' +
-			('' + Math.random()).slice(2);
+			String(Math.random()).slice(2);
 
 		marker.style.lineHeight = '0';
 		marker.style.display = 'none';
@@ -265,65 +271,59 @@ export class Select {
 
 	/**
 	 * Restores user selections using marker invisible elements in the DOM.
-	 *
-	 * @param {markerInfo[]|null} selectionInfo
 	 */
-	restore(selectionInfo: markerInfo[] | null = []): void {
-		if (isArray(selectionInfo)) {
-			let range: Range | false = false;
+	restore(): void {
+		let range: Range | false = false;
 
-			selectionInfo.forEach((selection: markerInfo) => {
-				const end = this.area.querySelector(
-						'#' + selection.endId
-					) as HTMLElement,
-					start = this.area.querySelector(
-						'#' + selection.startId
-					) as HTMLElement;
+		const markAttr = (start: boolean) =>
+			`span[data-${consts.MARKER_CLASS}=${start ? 'start' : 'end'}]`;
 
-				if (!start) {
-					return;
-				}
+		const start = this.area.querySelector(markAttr(true)),
+			end = this.area.querySelector(markAttr(false));
 
-				range = this.createRange();
+		if (!start) {
+			return;
+		}
 
-				if (selection.collapsed || !end) {
-					const previousNode: Node | null = start.previousSibling;
+		range = this.createRange();
 
-					if (Dom.isText(previousNode)) {
-						range.setStart(
-							previousNode,
-							previousNode.nodeValue
-								? previousNode.nodeValue.length
-								: 0
-						);
-					} else {
-						range.setStartBefore(start);
-					}
+		if (!end) {
+			const previousNode: Node | null = start.previousSibling;
 
-					Dom.safeRemove(start);
-
-					range.collapse(true);
-				} else {
-					range.setStartAfter(start);
-					Dom.safeRemove(start);
-
-					range.setEndBefore(end);
-					Dom.safeRemove(end);
-				}
-			});
-
-			if (range) {
-				this.selectRange(range);
+			if (Dom.isText(previousNode)) {
+				range.setStart(
+					previousNode,
+					previousNode.nodeValue ? previousNode.nodeValue.length : 0
+				);
+			} else {
+				range.setStartBefore(start);
 			}
+
+			Dom.safeRemove(start);
+
+			range.collapse(true);
+		} else {
+			range.setStartAfter(start);
+			Dom.safeRemove(start);
+
+			range.setEndBefore(end);
+			Dom.safeRemove(end);
+		}
+
+		if (range) {
+			this.selectRange(range);
 		}
 	}
 
 	/**
 	 * Saves selections using marker invisible elements in the DOM.
-	 *
-	 * @return markerInfo[]
+	 * @param [silent] Do not change current range
 	 */
-	save(): markerInfo[] {
+	save(silent: boolean = false): markerInfo[] {
+		if (this.hasMarkers) {
+			return [];
+		}
+
 		const sel = this.sel;
 
 		if (!sel || !sel.rangeCount) {
@@ -334,13 +334,11 @@ export class Select {
 			length: number = sel.rangeCount,
 			ranges: Range[] = [];
 
-		let i: number, start: HTMLSpanElement, end: HTMLSpanElement;
-
-		for (i = 0; i < length; i += 1) {
+		for (let i = 0; i < length; i += 1) {
 			ranges[i] = sel.getRangeAt(i);
 
 			if (ranges[i].collapsed) {
-				start = this.marker(true, ranges[i]);
+				const start = this.marker(true, ranges[i]);
 
 				info[i] = {
 					startId: start.id,
@@ -348,8 +346,8 @@ export class Select {
 					startMarker: start.outerHTML
 				};
 			} else {
-				start = this.marker(true, ranges[i]);
-				end = this.marker(false, ranges[i]);
+				const start = this.marker(true, ranges[i]);
+				const end = this.marker(false, ranges[i]);
 
 				info[i] = {
 					startId: start.id,
@@ -361,31 +359,35 @@ export class Select {
 			}
 		}
 
-		sel.removeAllRanges();
+		if (!silent) {
+			sel.removeAllRanges();
 
-		for (i = length - 1; i >= 0; --i) {
-			const startElm = this.doc.getElementById(info[i].startId);
+			for (let i = length - 1; i >= 0; --i) {
+				const startElm = this.doc.getElementById(info[i].startId);
 
-			if (startElm) {
-				if (info[i].collapsed) {
-					ranges[i].setStartAfter(startElm);
-					ranges[i].collapse(true);
-				} else {
-					ranges[i].setStartBefore(startElm);
-					if (info[i].endId) {
-						const endElm = this.doc.getElementById(
-							info[i].endId as string
-						);
-						if (endElm) {
-							ranges[i].setEndAfter(endElm);
+				if (startElm) {
+					if (info[i].collapsed) {
+						ranges[i].setStartAfter(startElm);
+						ranges[i].collapse(true);
+					} else {
+						ranges[i].setStartBefore(startElm);
+
+						if (info[i].endId) {
+							const endElm = this.doc.getElementById(
+								info[i].endId as string
+							);
+
+							if (endElm) {
+								ranges[i].setEndAfter(endElm);
+							}
 						}
 					}
 				}
-			}
 
-			try {
-				sel.addRange(ranges[i].cloneRange());
-			} catch {}
+				try {
+					sel.addRange(ranges[i].cloneRange());
+				} catch {}
+			}
 		}
 
 		return info;
@@ -393,9 +395,14 @@ export class Select {
 
 	/**
 	 * Set focus in editor
+	 * @param options
 	 */
 	@autobind
-	focus(): boolean {
+	focus(
+		options: FocusOptions = {
+			preventScroll: true
+		}
+	): boolean {
 		if (!this.isFocused()) {
 			if (this.j.iframe) {
 				if (this.doc.readyState === 'complete') {
@@ -404,7 +411,7 @@ export class Select {
 			}
 
 			this.win.focus();
-			this.area.focus();
+			this.area.focus(options);
 
 			const sel = this.sel,
 				range = sel?.rangeCount ? sel?.getRangeAt(0) : null;
@@ -675,7 +682,7 @@ export class Select {
 			image.setAttribute('src', url);
 		}
 
-		if (defaultWidth !== null) {
+		if (defaultWidth != null) {
 			let dw: string = defaultWidth.toString();
 
 			if (
@@ -712,7 +719,7 @@ export class Select {
 			onload();
 		}
 
-		const result = this.insertNode(image);
+		this.insertNode(image);
 
 		/**
 		 * Triggered after image was inserted {@link Selection~insertImage|insertImage}. This method can executed from
@@ -728,8 +735,6 @@ export class Select {
 		 * ```
 		 */
 		this.j.e.fire('afterInsertImage', image);
-
-		return result;
 	}
 
 	/**
@@ -1112,7 +1117,7 @@ export class Select {
 		});
 
 		if (!this.isCollapsed()) {
-			this.doc.execCommand('fontsize', false, '7');
+			this.j.nativeExecCommand('fontsize', false, '7');
 		} else {
 			const font = this.j.createInside.element('font');
 			attr(font, 'size', 7);
@@ -1148,8 +1153,14 @@ export class Select {
 					);
 				}
 			} finally {
-				if (font.parentNode) {
+				const pn = font.parentNode;
+
+				if (pn) {
 					Dom.unwrap(font);
+
+					if (Dom.isEmpty(pn)) {
+						Dom.unwrap(pn);
+					}
 				}
 			}
 		});
@@ -1178,12 +1189,14 @@ export class Select {
 		style: CanUndef<IStyle>,
 		options: {
 			element?: HTMLTagNames;
+			className?: string;
 			defaultTag?: HTMLTagNames;
 		} = {}
 	): void {
 		const styleElm = new Style({
 			style,
 			element: options.element,
+			className: options.className,
 			defaultTag: options.defaultTag
 		});
 

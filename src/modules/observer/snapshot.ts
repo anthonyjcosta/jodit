@@ -1,10 +1,10 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { IJodit, SnapshotType } from '../../types';
+import type { IJodit, SnapshotType } from '../../types';
 import { ViewComponent } from '../../core/component';
 import { Dom } from '../../core/dom';
 
@@ -13,6 +13,11 @@ import { Dom } from '../../core/dom';
  * Module for creating snapshot of editor which includes html content and the current selection
  */
 export class Snapshot extends ViewComponent<IJodit> {
+	/** @override */
+	className(): string {
+		return 'Snapshot';
+	}
+
 	/**
 	 * Compare two snapshotes, if and htmls and selections match, then return true
 	 *
@@ -72,7 +77,7 @@ export class Snapshot extends ViewComponent<IJodit> {
 		while (Dom.isText(elm)) {
 			elm = elm.previousSibling;
 
-			if (Dom.isText(elm) && elm.textContent !== null) {
+			if (Dom.isText(elm) && elm.textContent != null) {
 				offset += elm.textContent.length;
 			}
 		}
@@ -193,19 +198,22 @@ export class Snapshot extends ViewComponent<IJodit> {
 			this.j.setEditorValue(snapshot.html);
 		}
 
-		this.restoreOnlySelection(snapshot)
+		this.restoreOnlySelection(snapshot);
 
 		this.restoreScrollState(scroll);
 		this.isBlocked = false;
 	}
 
 	private storeScrollState(): [number, number] {
-		return [window.scrollY, this.j.editor.scrollTop];
+		return [this.j.ow.scrollY, this.j.editor.scrollTop];
 	}
 
 	private restoreScrollState(scrolls: [number, number]): void {
-		window.scrollTo(window.scrollX, scrolls[0]);
-		this.j.editor.scrollTop = scrolls[1];
+		const { j } = this,
+			{ ow } = j;
+
+		ow.scrollTo(ow.scrollX, scrolls[0]);
+		j.editor.scrollTop = scrolls[1];
 	}
 
 	/**

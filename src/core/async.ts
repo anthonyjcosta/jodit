@@ -1,11 +1,23 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { CallbackFunction, IAsync, IAsyncParams, ITimeout } from '../types';
-import { setTimeout, clearTimeout, isFunction } from './helpers/';
+import type {
+	CallbackFunction,
+	IAsync,
+	IAsyncParams,
+	ITimeout,
+	RejectablePromise
+} from '../types';
+import {
+	setTimeout,
+	clearTimeout,
+	isFunction,
+	isPlainObject,
+	isPromise
+} from './helpers/';
 
 export class Async implements IAsync {
 	private timers: Map<number | string | Function, number> = new Map();
@@ -67,21 +79,32 @@ export class Async implements IAsync {
 	 */
 	debounce(
 		fn: CallbackFunction,
-		timeout: ITimeout,
+		timeout: ITimeout | IAsyncParams,
 		firstCallImmediately: boolean = false
 	): CallbackFunction {
 		let timer: number = 0,
 			fired: boolean = false;
 
+		const promises: Function[] = [];
+
 		const callFn = (...args: any[]) => {
 			if (!fired) {
 				timer = 0;
-				fn(...args);
+				const res = fn(...args);
 				fired = true;
+
+				if (promises.length) {
+					const runPromises = () => {
+						promises.forEach(res => res());
+						promises.length = 0;
+					};
+
+					isPromise(res) ? res.finally(runPromises) : runPromises();
+				}
 			}
 		};
 
-		return (...args: any[]) => {
+		const onFire = (...args: any[]) => {
 			fired = false;
 
 			if (!timeout) {
@@ -96,9 +119,22 @@ export class Async implements IAsync {
 					() => callFn(...args),
 					isFunction(timeout) ? timeout() : timeout
 				);
+
 				this.timers.set(fn, timer);
 			}
 		};
+
+		return isPlainObject(timeout) && timeout.promisify
+			? (...args: any[]) => {
+					const promise = this.promise(res => {
+						promises.push(res);
+					});
+
+					onFire(...args);
+
+					return promise;
+			  }
+			: onFire;
 	}
 
 	/**
@@ -118,7 +154,11 @@ export class Async implements IAsync {
 	 * }, 100));
 	 * ```
 	 */
-	throttle(fn: CallbackFunction, timeout: ITimeout): CallbackFunction {
+	throttle(
+		fn: CallbackFunction,
+		timeout: ITimeout | IAsyncParams,
+		ignore: boolean = false
+	): CallbackFunction {
 		let timer: number | null = null,
 			needInvoke: boolean,
 			callee: () => void,
@@ -142,6 +182,7 @@ export class Async implements IAsync {
 							callee,
 							isFunction(timeout) ? timeout() : timeout
 						);
+
 						this.timers.set(callee, timer);
 					} else {
 						timer = null;
@@ -157,11 +198,11 @@ export class Async implements IAsync {
 
 	promise<T>(
 		executor: (
-			resolve: (value?: T | PromiseLike<T>) => void,
+			resolve: (value: T | PromiseLike<T>) => void,
 			reject?: (reason?: any) => void
 		) => void
-	): Promise<T> {
-		let rejectCallback: Function = () => {};
+	): RejectablePromise<T> {
+		let rejectCallback: RejectablePromise<T>['rejectCallback'] = () => {};
 
 		const promise = new Promise<T>((resolve, reject) => {
 			this.promisesRejections.add(reject);
@@ -169,11 +210,20 @@ export class Async implements IAsync {
 			return executor(resolve, reject);
 		});
 
+		if (!promise.finally && process.env.TARGET_ES !== 'es2018') {
+			promise.finally = (onfinally?: (() => void) | undefined | null) => {
+				promise.then(onfinally).catch(onfinally);
+				return promise;
+			};
+		}
+
 		promise.finally(() => {
 			this.promisesRejections.delete(rejectCallback);
 		});
 
-		return promise;
+		(promise as RejectablePromise<T>).rejectCallback = rejectCallback;
+
+		return promise as RejectablePromise<T>;
 	}
 
 	/**
@@ -215,7 +265,49 @@ export class Async implements IAsync {
 		);
 	}
 
+	private requestsIdle: Set<number> = new Set();
+
+	private requestIdleCallbackNative =
+		(window as any)['requestIdleCallback']?.bind(window) ??
+		((callback: CallbackFunction): number => {
+			const start = Date.now();
+
+			return this.setTimeout(() => {
+				callback({
+					didTimeout: false,
+					timeRemaining: () => Math.max(0, 50 - (Date.now() - start))
+				});
+			}, 1);
+		});
+
+	private cancelIdleCallbackNative =
+		(window as any)['cancelIdleCallback']?.bind(window) ??
+		((request: number): void => {
+			this.clearTimeout(request);
+		});
+
+	requestIdleCallback(callback: CallbackFunction): number {
+		const request = this.requestIdleCallbackNative(callback);
+		this.requestsIdle.add(request);
+		return request;
+	}
+
+	requestIdlePromise(): Promise<number> {
+		return new Promise<number>(res => {
+			const request = this.requestIdleCallback(() => res(request));
+		});
+	}
+
+	cancelIdleCallback(request: number): void {
+		this.requestsIdle.delete(request);
+		return this.cancelIdleCallbackNative(request);
+	}
+
 	clear(): void {
+		this.requestsIdle.forEach(key => {
+			this.cancelIdleCallback(key);
+		});
+
 		this.timers.forEach(key => {
 			clearTimeout(this.timers.get(key) as number);
 		});

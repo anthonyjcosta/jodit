@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 describe('WrapTextNodes plugin test', function () {
@@ -12,13 +12,47 @@ describe('WrapTextNodes plugin test', function () {
 			expect(editor.value).equals('<p>test</p>');
 		});
 
+		describe('For STYLE/SCRIPT elements', function () {
+			it('Should not wrap it', function () {
+				const editor = getJodit();
+				editor.value =
+					'test' +
+					'<style>.a{color: red;}</style>' +
+					'<script>console.log(111);</script>' +
+					'sdsdsd';
+
+				editor.selection.setCursorAfter(editor.editor.firstChild);
+				editor.setEditorValue();
+
+				expect(editor.value).equals(
+					'<p>test</p><style>.a{color: red;}</style><script>console.log(111);</script><p>sdsdsd</p>'
+				);
+			});
+		});
+
+		describe('Block elements', function () {
+			it('Should not wrap it', function () {
+				const editor = getJodit();
+				editor.value =
+					'<section>test</section>stop<p>post</p><article>yes</article>';
+				editor.selection.setCursorAfter(editor.editor.firstChild);
+
+				editor.selection.save();
+				editor.setEditorValue();
+
+				expect(editor.value).equals(
+					'<section>test</section><p>stop</p><p>post</p><article>yes</article>'
+				);
+			});
+		});
+
 		describe('Change selection marker', function () {
 			it('Should not wrap it', function () {
 				const editor = getJodit();
 				editor.value = 'test';
 				editor.selection.setCursorAfter(editor.editor.firstChild);
 
-				const selInfo = editor.selection.save();
+				editor.selection.save();
 				editor.setEditorValue();
 
 				expect(editor.value).equals('<p>test</p>');

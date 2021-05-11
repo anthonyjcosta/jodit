@@ -1,14 +1,12 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import './popup.less';
 
-import autobind from 'autobind-decorator';
-
-import {
+import type {
 	CanUndef,
 	IBound,
 	IBoundP,
@@ -30,11 +28,17 @@ import {
 	ucfirst
 } from '../../helpers';
 import { eventEmitter, getContainer } from '../../global';
-import { UIElement } from '../';
+import { UIElement } from '../element';
+import { autobind } from '../../decorators';
 
 type getBoundFunc = () => IBound;
 
 export class Popup extends UIElement implements IPopup {
+	/** @override */
+	className(): string {
+		return 'Popup';
+	}
+
 	isOpened: boolean = false;
 	strategy: PopupStrategy = 'leftBottom';
 
@@ -83,6 +87,7 @@ export class Popup extends UIElement implements IPopup {
 
 		if (content instanceof UIElement) {
 			elm = content.container;
+			// @ts-ignore
 			content.parentElement = this;
 		} else if (isString(content)) {
 			elm = this.j.c.fromHTML(content);
@@ -298,6 +303,7 @@ export class Popup extends UIElement implements IPopup {
 		this.childrenPopups.forEach(popup => popup.close());
 
 		this.j.e.fire(this, 'beforeClose');
+		this.j.e.fire('beforePopupClose', this);
 
 		this.removeGlobalListeners();
 
@@ -336,13 +342,17 @@ export class Popup extends UIElement implements IPopup {
 
 		eventEmitter.on('closeAllPopups', this.close);
 
+		if (this.smart) {
+			this.j.e
+				.on('escape', this.close)
+				.on('mousedown touchstart', this.closeOnOutsideClick)
+				.on(ow, 'mousedown touchstart', this.closeOnOutsideClick);
+		}
+
 		this.j.e
 			.on('closeAllPopups', this.close)
-			.on('escape', this.close)
 			.on('resize', up)
 			.on(this.container, 'scroll mousewheel', up)
-			.on('mousedown touchstart', this.closeOnOutsideClick)
-			.on(ow, 'mousedown touchstart', this.closeOnOutsideClick)
 			.on(ow, 'scroll', up)
 			.on(ow, 'resize', up);
 	}
@@ -353,13 +363,18 @@ export class Popup extends UIElement implements IPopup {
 
 		eventEmitter.off('closeAllPopups', this.close);
 
+		if (this.smart) {
+			this.j.e
+				.off('escape', this.close)
+				.off('mousedown touchstart', this.closeOnOutsideClick)
+				.off(ow, 'mousedown touchstart', this.closeOnOutsideClick);
+		}
+
 		this.j.e
 			.off('closeAllPopups', this.close)
-			.off('escape', this.close)
+
 			.off('resize', up)
 			.off(this.container, 'scroll mousewheel', up)
-			.off('mousedown touchstart', this.closeOnOutsideClick)
-			.off(ow, 'mousedown touchstart', this.closeOnOutsideClick)
 			.off(ow, 'scroll', up)
 			.off(ow, 'resize', up);
 	}
@@ -372,7 +387,7 @@ export class Popup extends UIElement implements IPopup {
 		this.container.style.zIndex = index.toString();
 	}
 
-	constructor(jodit: IViewBased) {
+	constructor(jodit: IViewBased, readonly smart: boolean = true) {
 		super(jodit);
 		attr(this.container, 'role', 'popup');
 	}

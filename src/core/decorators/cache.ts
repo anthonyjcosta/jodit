@@ -1,10 +1,11 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import { error } from '../helpers';
+import type { IDictionary } from '../../types';
 
 export interface CachePropertyDescriptor<T, R> extends PropertyDescriptor {
 	get?: (this: T) => R;
@@ -23,6 +24,10 @@ export function cache<T, R>(
 
 	descriptor.get = function (this: T) {
 		const value = getter.call(this);
+
+		if (value && (value as IDictionary).noCache === true) {
+			return value;
+		}
 
 		Object.defineProperty(this, name, {
 			configurable: descriptor.configurable,

@@ -1,15 +1,15 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import './source.less';
 
+import type { IJodit, ISourceEditor, markerInfo } from '../../types';
 import * as consts from '../../core/constants';
 import { MODE_SOURCE } from '../../core/constants';
 import { Plugin } from '../../core/plugin';
-import { IJodit, ISourceEditor, markerInfo } from '../../types';
 import { Dom } from '../../core/dom';
 import { isString, loadNext } from '../../core/helpers';
 import { createSourceEditor } from './editor/factory';
@@ -20,6 +20,14 @@ import { createSourceEditor } from './editor/factory';
  * @module source
  */
 export class source extends Plugin {
+	/** @override */
+	buttons: Plugin['buttons'] = [
+		{
+			name: 'source',
+			group: 'source'
+		}
+	];
+
 	sourceEditor?: ISourceEditor;
 
 	private mirrorContainer!: HTMLDivElement;
@@ -207,7 +215,7 @@ export class source extends Plugin {
 
 		if (this.j.getRealMode() === consts.MODE_WYSIWYG) {
 			this.__lock = true;
-			this.j.s.restore(this.selInfo);
+			this.j.s.restore();
 			this.__lock = false;
 			return;
 		}

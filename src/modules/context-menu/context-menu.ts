@@ -1,12 +1,12 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import './context-menu.less';
 
-import { IContextMenu, IContextMenuAction } from '../../types';
+import type { IContextMenu, IContextMenuAction } from '../../types';
 import { Popup } from '../../core/ui/popup';
 import { Button } from '../../core/ui/button';
 import { isArray } from '../../core/helpers/checker';
@@ -18,6 +18,11 @@ import { isArray } from '../../core/helpers/checker';
  * @param {Object} parent Jodit main object
  */
 export class ContextMenu extends Popup implements IContextMenu {
+	/** @override */
+	className(): string {
+		return 'ContextMenu';
+	}
+
 	/**
 	 * Generate and show context menu
 	 *

@@ -1,11 +1,22 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { CanUndef, IDictionary } from '../../types';
-import { error, isFunction, isPlainObject, splitArray } from '../helpers';
+import type {
+	CanUndef,
+	IComponent,
+	IDictionary,
+	IViewComponent
+} from '../../types';
+import {
+	error,
+	isFunction,
+	isPlainObject,
+	isViewObject,
+	splitArray
+} from '../helpers';
 import { ObserveObject } from '../events';
 import { Component, STATUSES } from '../component';
 
@@ -27,7 +38,10 @@ export function getPropertyDescriptor(
  * Watch decorator. Added observer for some change in field value
  * @param observeFields
  */
-export function watch(observeFields: string[] | string) {
+export function watch(
+	observeFields: string[] | string,
+	context?: object | ((c: IDictionary) => object)
+) {
 	return <T extends Component & IDictionary>(
 		target: T,
 		propertyKey: string
@@ -36,24 +50,53 @@ export function watch(observeFields: string[] | string) {
 			throw error('Handler must be a Function');
 		}
 
-		const process = (component: IDictionary) => {
-			const callback = (key: string, ...args: any[]) => {
+		const process = (component: IComponent) => {
+			const callback = (key: string, ...args: any[]): void | any => {
 				if (!component.isInDestruct) {
-					component[propertyKey](key, ...args);
+					return (component as any)[propertyKey](key, ...args);
 				}
 			};
 
 			splitArray(observeFields).forEach(field => {
+				if (/:/.test(field)) {
+					const [objectPath, eventName] = field.split(':');
+					const view = isViewObject(component)
+						? component
+						: ((component as unknown) as IViewComponent).jodit;
+
+					if (objectPath.length) {
+						// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+						context = component.get<CanUndef<object>>(objectPath)!;
+					}
+
+					if (isFunction(context)) {
+						context = context(component);
+					}
+
+					view.events
+						.on(context || component, eventName, callback)
+						.on(eventName, callback);
+
+					view.hookStatus('beforeDestruct', () => {
+						view.events
+							.off(context || component, eventName, callback)
+							.off(eventName, callback);
+					});
+
+					return;
+				}
+
 				const parts = field.split('.'),
-					[key] = parts;
+					[key] = (parts as unknown) as Array<keyof IComponent>;
 
 				let value: any = component[key];
 
 				if (value instanceof ObserveObject) {
 					value.on(`change.${field}`, callback);
 				} else if (isPlainObject(value) && parts.length > 1) {
-					component[key] = ObserveObject.create(value, [key]);
-					component[key].on(`change.${field}`, callback);
+					const observe = ObserveObject.create(value, [key]);
+					observe.on(`change.${field}`, callback);
+					(component as any)[key] = observe;
 				} else {
 					const descriptor = getPropertyDescriptor(target, key);
 

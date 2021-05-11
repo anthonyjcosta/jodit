@@ -1,12 +1,12 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
+import type { IControlType, IJodit, Nullable } from '../types';
 import { Config } from '../config';
 import { Dom } from '../core/dom';
-import { IControlType, IJodit, Nullable } from '../types';
 import { dataBind, toArray } from '../core/helpers';
 
 const exec: IControlType<IJodit>['exec'] = (jodit, _, { control }): void => {
@@ -135,7 +135,7 @@ export function orderedList(editor: IJodit): void {
 					);
 
 					if (unwrapList.length) {
-						const selection = editor.s.save();
+						editor.s.save();
 
 						toArray(ul.childNodes).forEach(li => {
 							if (Dom.isTag(li.lastChild, 'br')) {
@@ -145,7 +145,7 @@ export function orderedList(editor: IJodit): void {
 
 						unwrapList.forEach(elm => Dom.unwrap(elm));
 
-						editor.s.restore(selection);
+						editor.s.restore();
 					}
 				}
 

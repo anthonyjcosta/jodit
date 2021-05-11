@@ -1,10 +1,10 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import {
+import type {
 	IDictionary,
 	Attributes,
 	Children,
@@ -24,6 +24,7 @@ import {
 } from './helpers/';
 
 import { Dom } from './dom';
+import { INVISIBLE_SPACE } from './constants';
 
 export class Create implements ICreate {
 	private get doc(): Document {
@@ -160,11 +161,18 @@ export class Create implements ICreate {
 
 	/**
 	 * Create text node
-	 *
 	 * @param value
 	 */
 	text(value: string): Text {
 		return this.doc.createTextNode(value);
+	}
+
+	/**
+	 * Create invisible text node
+	 * @param value
+	 */
+	fake(): Text {
+		return this.text(INVISIBLE_SPACE);
 	}
 
 	/**

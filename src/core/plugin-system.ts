@@ -1,10 +1,10 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import {
+import type {
 	IExtraPlugin,
 	IDictionary,
 	IJodit,
@@ -42,6 +42,10 @@ import {
  * ```
  */
 export class PluginSystem implements IPluginSystem {
+	private normalizeName(name: string): string {
+		return kebabCase(name).toLowerCase();
+	}
+
 	private items = new Map<string, PluginType>();
 
 	/**
@@ -51,7 +55,7 @@ export class PluginSystem implements IPluginSystem {
 	 * @param plugin
 	 */
 	add(name: string, plugin: PluginType): void {
-		this.items.set(name.toLowerCase(), plugin);
+		this.items.set(this.normalizeName(name), plugin);
 	}
 
 	/**
@@ -59,7 +63,7 @@ export class PluginSystem implements IPluginSystem {
 	 * @param name
 	 */
 	get(name: string): PluginType | void {
-		return this.items.get(name.toLowerCase());
+		return this.items.get(this.normalizeName(name));
 	}
 
 	/**
@@ -67,7 +71,7 @@ export class PluginSystem implements IPluginSystem {
 	 * @param name
 	 */
 	remove(name: string): void {
-		this.items.delete(name.toLowerCase());
+		this.items.delete(this.normalizeName(name));
 	}
 
 	/**
@@ -79,7 +83,7 @@ export class PluginSystem implements IPluginSystem {
 				isString(s) ? { name: s } : s
 			),
 			disableList = splitArray(jodit.o.disablePlugins).map(s =>
-				s.toLowerCase()
+				this.normalizeName(s)
 			),
 			doneList: string[] = [],
 			promiseList: IDictionary<PluginInstance | undefined> = {},
@@ -174,10 +178,6 @@ export class PluginSystem implements IPluginSystem {
 		promiseList: IDictionary<PluginInstance | undefined>
 	) {
 		const initPlugin = (name: string, plugin: PluginInstance): boolean => {
-			if ((plugin as IPlugin).hasStyle) {
-				PluginSystem.loadStyle(jodit, name);
-			}
-
 			if (isInitable(plugin)) {
 				const req = (plugin as IPlugin).requires;
 
@@ -195,6 +195,10 @@ export class PluginSystem implements IPluginSystem {
 				doneList.push(name);
 			}
 
+			if ((plugin as IPlugin).hasStyle) {
+				PluginSystem.loadStyle(jodit, name);
+			}
+
 			return true;
 		};
 
@@ -207,7 +211,7 @@ export class PluginSystem implements IPluginSystem {
 				return;
 			}
 
-			if (initPlugin(name, instance)) {
+			if (initPlugin(name, plugin)) {
 				promiseList[name] = undefined;
 				delete promiseList[name];
 			}
@@ -262,17 +266,25 @@ export class PluginSystem implements IPluginSystem {
 	}
 
 	/**
-	 *
-	 *
 	 * @param jodit
 	 * @param pluginName
 	 */
-	private static loadStyle(jodit: IJodit, pluginName: string): Promise<void> {
-		return appendStyleAsync(
-			jodit,
-			PluginSystem.getFullUrl(jodit, pluginName, false)
-		);
+	private static async loadStyle(
+		jodit: IJodit,
+		pluginName: string
+	): Promise<void> {
+		const url = PluginSystem.getFullUrl(jodit, pluginName, false);
+
+		if (this.styles.has(url)) {
+			return;
+		}
+
+		this.styles.add(url);
+
+		return appendStyleAsync(jodit, url);
 	}
+
+	private static styles: Set<string> = new Set();
 
 	/**
 	 * Call full url to the script or style file
@@ -306,7 +318,7 @@ export class PluginSystem implements IPluginSystem {
 		if (extrasList && extrasList.length) {
 			try {
 				const needLoadExtras = extrasList.filter(
-					extra => !this.items.has(extra.name)
+					extra => !this.items.has(this.normalizeName(extra.name))
 				);
 
 				if (needLoadExtras.length) {

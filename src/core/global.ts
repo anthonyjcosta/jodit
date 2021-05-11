@@ -1,10 +1,10 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import {
+import type {
 	HTMLTagNames,
 	IComponent,
 	IDictionary,
@@ -12,14 +12,18 @@ import {
 	IViewBased,
 	IViewComponent
 } from '../types';
+
 import { PluginSystem } from './plugin-system';
+
 import { Dom } from './dom';
+
 import {
 	getClassName,
 	isJoditObject,
 	isViewObject,
 	kebabCase
 } from './helpers/';
+
 import { EventsNative } from './events';
 
 export const instances: IDictionary<IJodit> = {};
@@ -39,6 +43,15 @@ export const pluginSystem = new PluginSystem();
 export const modules: IDictionary<Function> = {};
 
 export const lang: IDictionary<IDictionary<string>> = {};
+export const extendLang = (langs: IDictionary) => {
+	Object.keys(langs).forEach(key => {
+		if (lang[key]) {
+			Object.assign(lang[key], langs[key]);
+		} else {
+			lang[key] = langs[key];
+		}
+	});
+};
 
 const boxes = new WeakMap<IComponent, IDictionary<HTMLElement>>();
 
@@ -57,11 +70,12 @@ export function getContainer<T extends HTMLTagNames = HTMLTagNames>(
 ): HTMLElementTagNameMap[T] {
 	const name = getClassName(classFunc.prototype);
 
-	const data = boxes.get(jodit) || {};
+	const data = boxes.get(jodit) || {},
+		key = name + tag;
 
-	if (!data[name]) {
-		const view = isViewObject(jodit) ? jodit : jodit.j;
+	const view = isViewObject(jodit) ? jodit : jodit.j;
 
+	if (!data[key]) {
 		let c = view.c,
 			body = jodit.od.body;
 
@@ -78,11 +92,11 @@ export function getContainer<T extends HTMLTagNames = HTMLTagNames>(
 
 		body.appendChild(box);
 
-		data[name] = box;
+		data[key] = box;
 
 		jodit.hookStatus('beforeDestruct', () => {
 			Dom.safeRemove(box);
-			delete data[name];
+			delete data[key];
 
 			if (Object.keys(data).length) {
 				boxes.delete(jodit);
@@ -92,7 +106,10 @@ export function getContainer<T extends HTMLTagNames = HTMLTagNames>(
 		boxes.set(jodit, data);
 	}
 
-	return data[name] as HTMLElementTagNameMap[T];
+	data[key].classList.remove('jodit_theme_default', 'jodit_theme_dark');
+	data[key].classList.add(`jodit_theme_${view.o.theme || 'default'}`);
+
+	return data[key] as HTMLElementTagNameMap[T];
 }
 
 /**

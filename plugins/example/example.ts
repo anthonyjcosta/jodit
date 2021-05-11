@@ -1,15 +1,16 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
-import { IJodit, IPlugin, IControlType } from '../../src/types';
+
+import type { IJodit, IPlugin, IControlType } from '../../src/types';
 
 Jodit.defaultOptions.controls.example = {
 	iconURL: '{basePath}plugins/example/icon.svg',
 	tooltip: 'Example',
 	popup: (): string => {
-		return `<div class="jodit_example">Example plugin</div>`;
+		return '<div class="jodit_example">Example plugin</div>';
 	}
 } as IControlType;
 
@@ -29,7 +30,7 @@ Jodit.defaultOptions.controls.example2 = {
  *   extraPlugins: ['example']
  * });
  */
-class example implements IPlugin {
+class example implements IPlugin<IJodit> {
 	hasStyle = true;
 	jodit!: IJodit;
 

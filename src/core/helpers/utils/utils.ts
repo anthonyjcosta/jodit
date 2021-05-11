@@ -1,17 +1,22 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
-
-import { isFunction, isPromise } from '../checker';
 import type {
 	CanPromise,
+	IControlType,
 	IDictionary,
 	IViewBased,
-	Nullable
+	Nullable,
+	IJodit,
+	RejectablePromise
 } from '../../../types';
+import { isFunction } from '../checker/is-function';
+import { isPromise } from '../checker/is-promise';
 import { get } from './get';
+import { dataBind } from '../data-bind';
+import { isVoid } from '../checker';
 
 /**
  * Call function with parameters
@@ -61,7 +66,7 @@ export function attr(
 	}
 
 	if (value !== undefined) {
-		if (value === null) {
+		if (value == null) {
 			elm.hasAttribute(key) && elm.removeAttribute(key);
 		} else {
 			elm.setAttribute(key, value.toString());
@@ -137,4 +142,79 @@ export const reset = function <T extends Function>(key: string): Nullable<T> {
 	}
 
 	return map[key] ?? null;
+};
+
+/**
+ * Allow load image in promise
+ * @param src
+ * @param jodit
+ */
+export const loadImage = (
+	src: string,
+	jodit: IViewBased
+): RejectablePromise<HTMLImageElement> =>
+	jodit.async.promise<HTMLImageElement>((res, rej) => {
+		const image = new Image(),
+			onError = () => {
+				jodit.e.off(image);
+				rej?.();
+			},
+			onSuccess = () => {
+				jodit.e.off(image);
+				res(image);
+			};
+
+		jodit.e
+			.one(image, 'load', onSuccess)
+			.one(image, 'error', onError)
+			.one(image, 'abort', onError);
+
+		image.src = src;
+
+		if (image.complete) {
+			onSuccess();
+		}
+	});
+
+export const keys = (obj: object, own: boolean = true): string[] => {
+	if (own) {
+		return Object.keys(obj);
+	}
+
+	const props = [];
+
+	for (const key in obj) {
+		props.push(key);
+	}
+
+	return props;
+};
+
+/**
+ * Memorize last user chose
+ * @param editor
+ * @param _
+ * @param control
+ */
+export const memorizeExec = <T extends IJodit = IJodit>(
+	editor: T,
+	_: unknown,
+	{ control }: { control: IControlType<T> },
+	preProcessValue?: (value: string) => string
+): void | false => {
+	const key = `button${control.command}`;
+
+	let value = (control.args && control.args[0]) || dataBind(editor, key);
+
+	if (isVoid(value)) {
+		return false;
+	}
+
+	dataBind(editor, key, value);
+
+	if (preProcessValue) {
+		value = preProcessValue(value);
+	}
+
+	editor.execCommand(control.command as string, false, value || undefined);
 };

@@ -1,14 +1,13 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import autobind from 'autobind-decorator';
-
+import type { IJodit, IPointBound } from '../../types';
 import { Plugin } from '../../core/plugin';
-import { IJodit, IPointBound } from '../../types';
 import { Dom } from '../../core/dom';
+import { autobind } from '../../core/decorators';
 
 @autobind
 export class resizeHandler extends Plugin {
@@ -17,9 +16,16 @@ export class resizeHandler extends Plugin {
 
 	/** @override **/
 	protected afterInit(editor: IJodit) {
+		const { height, width, allowResizeX } = editor.o;
+		let { allowResizeY } = editor.o;
+
+		if (height === 'auto' && width !== 'auto') {
+			allowResizeY = false;
+		}
+
 		if (
-			editor.o.height !== 'auto' &&
-			(editor.o.allowResizeX || editor.o.allowResizeY)
+			(height !== 'auto' || width !== 'auto') &&
+			(allowResizeX || allowResizeY)
 		) {
 			editor.e
 				.on('toggleFullSize.resizeHandler', () => {
@@ -32,7 +38,7 @@ export class resizeHandler extends Plugin {
 					'mousedown touchstart',
 					this.onHandleResizeStart
 				)
-				.on(editor.ow, 'mouseup touchsend', this.onHandleResizeEnd);
+				.on(editor.ow, 'mouseup touchend', this.onHandleResizeEnd);
 
 			editor.container.appendChild(this.handle);
 		}

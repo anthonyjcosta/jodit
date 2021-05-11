@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 const webpack = require('webpack');
@@ -29,7 +29,7 @@ process.argv
 const config = require(path.resolve(cwd, './webpack.config'))(
 	[],
 	{
-		es: 'es5',
+		es: args['es'] || 'es5',
 		isTest: true
 	},
 	cwd
@@ -44,13 +44,7 @@ const port = args.port || 2000;
 
 const compiler = webpack(config);
 
-app.use(
-	webpackDevMiddleware(compiler, {
-		stats: { colors: true },
-		noInfo: true,
-		publicPath: config.output.publicPath
-	})
-);
+app.use(webpackDevMiddleware(compiler));
 
 app.use(webpackHotMiddleware(compiler));
 

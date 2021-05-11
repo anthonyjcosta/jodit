@@ -1,12 +1,12 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import { Config } from '../../config';
 
-import {
+import type {
 	IFileBrowser,
 	IFileBrowserAnswer,
 	IFileBrowserItem,
@@ -21,7 +21,7 @@ import {
 
 import { humanSizeToBytes, isArray, isString } from '../../core/helpers';
 import { ITEM_CLASS as IC } from './consts';
-import { Icon } from '../../core/ui';
+import { UIFileInput } from '../../core/ui';
 
 declare module '../../config' {
 	interface Config {
@@ -30,6 +30,8 @@ declare module '../../config' {
 }
 
 Config.prototype.filebrowser = {
+	namespace: '',
+
 	extraButtons: [],
 
 	filter(item: string | ISourceFile, search: string) {
@@ -155,6 +157,7 @@ Config.prototype.filebrowser = {
 	showFileSize: true,
 	showFileChangeTime: true,
 	saveStateInStorage: true,
+	pixelOffsetLoadNewChunk: 200,
 
 	getThumbTemplate(
 		this: IFileBrowser,
@@ -208,6 +211,8 @@ Config.prototype.filebrowser = {
 	},
 
 	ajax: {
+		...Config.prototype.defaultAjaxOptions,
+
 		url: '',
 		async: true,
 
@@ -290,31 +295,14 @@ Config.prototype.controls.filebrowser = {
 		isDisabled: (browser: IFileBrowser): boolean =>
 			!browser.dataProvider.canI('FileUpload'),
 
-		getContent: (
-			filebrowser: IFileBrowser,
-			control: IControlType
-		): HTMLElement => {
-			const btn = filebrowser.c
-				.fromHTML(`<span class="jodit-ui-button jodit__upload-button">
-						${Icon.get('plus')}
-						<input
-							type="file"
-							accept="${filebrowser.state.onlyImages ? 'image/*' : '*'}"
-							tabindex="-1"
-							dir="auto"
-							multiple=""
-							${
-								control.isDisabled &&
-								control.isDisabled(filebrowser, control)
-									? 'disabled="disabled"'
-									: ''
-							}
-						/>
-						</span>`);
+		getContent: (filebrowser: IFileBrowser): HTMLElement => {
+			const btn = new UIFileInput(filebrowser, {
+				onlyImages: filebrowser.state.onlyImages
+			});
 
-			filebrowser.e.fire('bindUploader.filebrowser', btn);
+			filebrowser.e.fire('bindUploader.filebrowser', btn.container);
 
-			return btn;
+			return btn.container;
 		}
 	} as IControlType,
 
@@ -326,13 +314,13 @@ Config.prototype.controls.filebrowser = {
 				!browser.dataProvider.canI('FileRemove')
 			);
 		},
-		exec: (editor: IViewBased) => {
+		exec: (editor: IFileBrowser) => {
 			editor.e.fire('fileRemove.filebrowser');
 		}
 	} as IControlType,
 
 	update: {
-		exec: (editor: IViewBased) => {
+		exec: (editor: IFileBrowser) => {
 			editor.e.fire('update.filebrowser');
 		}
 	} as IControlType,

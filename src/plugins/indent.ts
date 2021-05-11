@@ -1,13 +1,13 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
+import type { IControlType, HTMLTagNames, IJodit } from '../types/';
 import { Config } from '../config';
 import { BR, PARAGRAPH } from '../core/constants';
 import { Dom } from '../core/dom';
-import { IControlType, HTMLTagNames, IJodit } from '../types/';
 import { attr } from '../core/helpers';
 
 Config.prototype.controls.indent = {
@@ -63,11 +63,21 @@ Config.prototype.indentMargin = 10;
 export function indent(editor: IJodit): void {
 	const key = getKey(editor.o.direction);
 
+	editor
+		.registerButton({
+			name: 'indent',
+			group: 'indent'
+		})
+		.registerButton({
+			name: 'outdent',
+			group: 'indent'
+		});
+
 	const callback = (command: string): void | false => {
 		const indentedBoxes: HTMLElement[] = [];
 
 		editor.s.eachSelection((current: Node): false | void => {
-			const selectionInfo = editor.s.save();
+			editor.s.save();
 
 			let currentBox = current
 				? (Dom.up(
@@ -88,7 +98,7 @@ export function indent(editor: IJodit): void {
 			}
 
 			if (!currentBox) {
-				editor.s.restore(selectionInfo);
+				editor.s.restore();
 				return false;
 			}
 
@@ -111,7 +121,7 @@ export function indent(editor: IJodit): void {
 				}
 			}
 
-			editor.s.restore(selectionInfo);
+			editor.s.restore();
 		});
 
 		editor.setEditorValue();

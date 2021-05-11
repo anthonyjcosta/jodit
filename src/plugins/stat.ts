@@ -1,14 +1,14 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
+import type { Nullable } from '../types';
 import { Config } from '../config';
 import { INVISIBLE_SPACE_REG_EXP, SPACE_REG_EXP } from '../core/constants';
 import { Plugin } from '../core/plugin';
 import { Dom } from '../core/dom';
-import { Nullable } from '../types';
 
 declare module '../config' {
 	interface Config {
@@ -76,6 +76,7 @@ export class stat extends Plugin {
 		}
 	}, this.j.defaultTimeout);
 
+	/** @override */
 	beforeDestruct(): void {
 		Dom.safeRemove(this.charCounter);
 		Dom.safeRemove(this.wordCounter);

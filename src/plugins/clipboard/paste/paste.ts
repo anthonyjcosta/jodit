@@ -1,13 +1,12 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
-import autobind from 'autobind-decorator';
 
+import type { InsertMode, PasteEvent } from '../config';
 import type { IJodit } from '../../../types';
 import { Plugin } from '../../../core/plugin';
-import { InsertMode, PasteEvent } from '../config';
 import { getAllTypes, getDataTransfer, pasteInsertHtml } from './helpers';
 
 import {
@@ -37,6 +36,7 @@ import { pluginKey as clipboardPluginKey } from '../clipboard';
 import { Dom } from '../../../core/dom';
 import { Confirm, Dialog } from '../../../modules/dialog';
 import { Button } from '../../../core/ui/button';
+import { autobind } from '../../../core/decorators';
 
 type PastedValue = {
 	html: string | Node;
@@ -70,8 +70,8 @@ export class paste extends Plugin {
 	private onPaste(e: PasteEvent): void | false {
 		try {
 			if (
-				this.j.e.fire('beforePaste', e) === false ||
-				this.customPasteProcess(e) === false
+				this.customPasteProcess(e) === false ||
+				this.j.e.fire('beforePaste', e) === false
 			) {
 				e.preventDefault();
 				return false;
@@ -171,7 +171,9 @@ export class paste extends Plugin {
 	 */
 	private processHTML(e: PasteEvent, html: string): boolean {
 		if (this.j.o.askBeforePasteHTML) {
-			const cached = this.pasteStack.find(({ html }) => html === html);
+			const cached = this.pasteStack.find(
+				cachedItem => cachedItem.html === html
+			);
 
 			if (cached) {
 				this.insertByType(
@@ -412,14 +414,14 @@ export class paste extends Plugin {
 
 		this.j.container.appendChild(div);
 
-		const selData = this.j.s.save();
+		this.j.s.save();
 
 		div.focus();
 		let tick: number = 0;
 
 		const removeFakeFocus = () => {
 			Dom.safeRemove(div);
-			this.j.selection && this.j.s.restore(selData);
+			this.j.selection && this.j.s.restore();
 		};
 
 		const waitData = () => {

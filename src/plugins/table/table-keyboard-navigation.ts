@@ -1,13 +1,13 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
+import type { IJodit } from '../../types';
 import * as consts from '../../core/constants';
 import { Dom } from '../../core/dom';
 import { Table } from '../../modules';
-import { IJodit } from '../../types';
 
 /**
  * Process navigate keypressing in table cell
@@ -52,7 +52,7 @@ export function tableKeyboardNavigation(editor: IJodit): void {
 								(elm: Node | null) =>
 									event.key === consts.KEY_UP
 										? Dom.isTag(elm, 'br')
-										: !!elm,
+										: Boolean(elm),
 								block
 							) ||
 								(event.key !== consts.KEY_UP &&
@@ -65,7 +65,7 @@ export function tableKeyboardNavigation(editor: IJodit): void {
 								(elm: Node | null) =>
 									event.key === consts.KEY_DOWN
 										? Dom.isTag(elm, 'br')
-										: !!elm,
+										: Boolean(elm),
 								block
 							) ||
 								(event.key !== consts.KEY_DOWN &&

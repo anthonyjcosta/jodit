@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 const ts = require('typescript');
@@ -9,7 +9,7 @@ const vm = require('vm');
 
 let keys = [];
 
-module.exports = function(source) {
+module.exports = function (source) {
 	this.cacheable && this.cacheable(true);
 
 	let result = [];

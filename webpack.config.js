@@ -1,8 +1,9 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
+// eslint-disable-next-line strict
 const path = require('path');
 const fs = require('fs');
 
@@ -10,8 +11,8 @@ const webpack = require('webpack');
 
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
-const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const MinimizeJSPlugin = require('terser-webpack-plugin');
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const PostBuild = require('./src/utils/post-build');
 
 /**
@@ -32,21 +33,25 @@ module.exports = (env, argv, dir = __dirname, onlyTS = false) => {
 	`;
 
 	const debug = !argv || !argv.mode || !argv.mode.match(/production/);
-	const isTest = argv && Boolean(argv.isTest);
+	const isTest = Boolean(argv && argv.isTest);
 
 	const mode = debug ? 'development' : argv.mode;
 	const isProd = mode === 'production';
 	const uglify = !debug && argv && Boolean(argv.uglify);
+	const excludeLangs = Boolean(argv.excludeLangs) || false;
 
 	const ES = argv && ['es5', 'es2018'].includes(argv.es) ? argv.es : 'es2018';
 	const ESNext = ES === 'es2018';
 
-	console.warn('ES mode: ' + ES);
+	console.warn(`ES:${ES} Mode:${mode} Test:${isTest}`);
 
-	const filename = name =>
-		name +
-		(ES === 'es5' || isTest ? '' : '.' + ES) +
-		(uglify ? '.min' : '');
+	const filename =
+		argv.filename ||
+		(name =>
+			name +
+			(ES === 'es5' || isTest ? '' : '.' + ES) +
+			(excludeLangs ? '.en' : '') +
+			(uglify ? '.min' : ''));
 
 	const css_loaders = [
 		debug || isTest ? 'style-loader' : MiniCssExtractPlugin.loader,
@@ -66,10 +71,24 @@ module.exports = (env, argv, dir = __dirname, onlyTS = false) => {
 		{
 			loader: 'less-loader',
 			options: {
-				sourceMap: debug,
-				lessOptions: {}
+				sourceMap: debug
 			}
 		}
+	];
+
+	const plugins = [
+		new webpack.ProgressPlugin(),
+		new webpack.DefinePlugin({
+			appVersion: JSON.stringify(pkg.version),
+			isProd: isProd,
+			isESNext: ESNext,
+			isTest: isTest,
+			'process.env': {
+				TARGET_ES: JSON.stringify(ES),
+				NODE_ENV: JSON.stringify(mode),
+				EXCLUDE_LANGS: JSON.stringify(excludeLangs)
+			}
+		})
 	];
 
 	const config = {
@@ -77,10 +96,16 @@ module.exports = (env, argv, dir = __dirname, onlyTS = false) => {
 		mode,
 		context: dir,
 
-		devtool: debug ? 'inline-sourcemap' : false,
+		stats: {
+			colors: true
+		},
+
+		devtool: debug ? 'inline-source-map' : false,
 
 		entry: {
-			jodit: ['./src/index']
+			jodit: debug
+				? ['webpack-hot-middleware/client.js', './src/index']
+				: ['./src/index']
 		},
 
 		output: {
@@ -91,16 +116,15 @@ module.exports = (env, argv, dir = __dirname, onlyTS = false) => {
 		},
 
 		resolve: {
-			extensions: ['.ts', '.d.ts', '.js', '.json', '.less', '.svg']
+			extensions: ['.js', '.ts', '.d.ts', '.json', '.less', '.svg']
 		},
 
 		optimization: {
 			minimize: !debug && uglify,
-
+			moduleIds: debug ? 'named' : 'natural',
 			minimizer: [
 				new MinimizeJSPlugin({
 					parallel: true,
-					sourceMap: false,
 					extractComments: false,
 
 					exclude: './src/langs',
@@ -121,7 +145,7 @@ module.exports = (env, argv, dir = __dirname, onlyTS = false) => {
 
 							pure_getters: true,
 							unsafe_comps: true,
-							passes: 5
+							passes: 7
 						},
 
 						output: {
@@ -129,6 +153,18 @@ module.exports = (env, argv, dir = __dirname, onlyTS = false) => {
 							beautify: false,
 							preamble: banner
 						}
+					}
+				}),
+				new CssMinimizerPlugin({
+					parallel: true,
+					minimizerOptions: {
+						preset: [
+							'advanced',
+							{
+								discardComments: { removeAll: true },
+								zindex: false
+							}
+						]
 					}
 				})
 			]
@@ -139,6 +175,16 @@ module.exports = (env, argv, dir = __dirname, onlyTS = false) => {
 				{
 					test: /\.less$/,
 					use: css_loaders
+				},
+
+				{
+					test: /\.(js|ts)$/,
+					loader: 'ts-loader',
+					options: {
+						transpileOnly: true,
+						allowTsInNodeModules: true
+					},
+					include: [path.resolve(__dirname, './node_modules')]
 				},
 
 				{
@@ -165,7 +211,7 @@ module.exports = (env, argv, dir = __dirname, onlyTS = false) => {
 							target: ES
 						}
 					},
-					include: path.resolve(__dirname, './src/'),
+					include: [path.resolve(__dirname, './src/')],
 					exclude: [
 						/langs\/[a-z]{2}\.ts/,
 						/langs\/[a-z]{2}_[a-z]{2}\.ts/
@@ -185,29 +231,8 @@ module.exports = (env, argv, dir = __dirname, onlyTS = false) => {
 		},
 
 		plugins: debug
-			? [
-					new webpack.DefinePlugin({
-						appVersion: JSON.stringify(pkg.version),
-						isProd: isProd,
-						'process.env': {
-							TARGET_ES: JSON.stringify(ES),
-							NODE_ENV: JSON.stringify(mode)
-						}
-					}),
-					new webpack.NamedModulesPlugin(),
-					new webpack.HotModuleReplacementPlugin()
-				]
-			: [
-					new webpack.optimize.OccurrenceOrderPlugin(),
-					new webpack.DefinePlugin({
-						appVersion: JSON.stringify(pkg.version),
-						isProd: isProd,
-						'process.env': {
-							TARGET_ES: JSON.stringify(ES),
-							NODE_ENV: JSON.stringify(mode)
-						}
-					})
-				]
+			? [...plugins, new webpack.HotModuleReplacementPlugin()]
+			: plugins
 	};
 
 	if (!debug && !isTest) {
@@ -223,21 +248,6 @@ module.exports = (env, argv, dir = __dirname, onlyTS = false) => {
 		}
 
 		config.plugins.push(
-			new OptimizeCssAssetsPlugin({
-				assetNameRegExp: /\.css$/,
-				cssProcessorPluginOptions: {
-					preset: [
-						'default',
-						{
-							discardComments: {
-								removeAll: true
-							},
-							normalizeWhitespace: uglify
-						}
-					]
-				}
-			}),
-
 			new webpack.BannerPlugin({
 				banner,
 				raw: true,
@@ -249,14 +259,22 @@ module.exports = (env, argv, dir = __dirname, onlyTS = false) => {
 			config.plugins.push(
 				new PostBuild(() => {
 					const postcss = require('postcss');
+
 					const plugins = postcss([
-						require('autoprefixer'),
+						require('autoprefixer')({
+							overrideBrowserslist: [
+								'>1%',
+								'last 4 versions',
+								'Firefox ESR',
+								'ie >= 11'
+							]
+						}),
 						require('postcss-css-variables')
 					]);
 
 					const file = path.resolve(
 						config.output.path,
- 						filename('jodit') + '.css'
+						filename('jodit') + '.css'
 					);
 
 					fs.readFile(file, (err, css) => {
@@ -268,7 +286,11 @@ module.exports = (env, argv, dir = __dirname, onlyTS = false) => {
 						plugins
 							.process(css, { from: file, to: file })
 							.then(result => {
-								fs.writeFile(file, result.css, () => true);
+								fs.writeFile(
+									file,
+									banner + result.css,
+									() => true
+								);
 							});
 					});
 				})
@@ -279,7 +301,7 @@ module.exports = (env, argv, dir = __dirname, onlyTS = false) => {
 	Object.defineProperty(config, 'css_loaders', {
 		enumerable: false,
 		value: css_loaders
-	})
+	});
 
 	return config;
 };

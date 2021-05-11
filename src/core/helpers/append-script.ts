@@ -1,11 +1,11 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
+import type { IViewBased } from '../../types';
 import { completeUrl } from './complete-url';
-import { IViewBased } from '../../types';
 import { isFunction, isString } from './checker';
 
 export type Loader = (jodit: IViewBased, url: string) => Promise<any>;
@@ -47,6 +47,7 @@ export const appendScript = (
 	const script = jodit.c.element('script');
 
 	script.type = 'text/javascript';
+	script.async = true;
 
 	if (isFunction(callback) && !jodit.isInDestruct) {
 		jodit.e.on(script, 'load', callback);

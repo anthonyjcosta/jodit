@@ -1,10 +1,11 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { IJodit, Nullable } from '../../../types';
+import type { IJodit, Nullable } from '../../../types';
+import type { PasteEvent } from '../config';
 import {
 	isArray,
 	isNumber,
@@ -14,7 +15,6 @@ import {
 } from '../../../core/helpers';
 import { Dom } from '../../../core/dom';
 import { TEXT_PLAIN } from '../../../core/constants';
-import { PasteEvent } from '../config';
 
 /**
  * Get DataTransfer from different event types

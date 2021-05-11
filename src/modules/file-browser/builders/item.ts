@@ -1,23 +1,35 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import {
+import type {
+	IDictionary,
 	IFileBrowserItemElement,
-	IFileBrowserItemWrapper
+	IFileBrowserItemWrapper,
+	ISource
 } from '../../../types';
-import { extend, normalizePath, normalizeUrl } from '../../../core/helpers/';
+import { normalizePath, normalizeUrl } from '../../../core/helpers/';
 
 export class FileBrowserItem implements IFileBrowserItemWrapper {
+	source!: ISource;
+	sourceName!: string;
+	type!: IFileBrowserItemWrapper['type'];
+
 	private constructor(readonly data: IFileBrowserItemElement) {
-		extend(this, data);
+		Object.keys(data).forEach(key => {
+			(this as IDictionary)[key] = (data as IDictionary)[key];
+		});
 	}
 
 	static create(
 		data: IFileBrowserItemElement
 	): FileBrowserItem & IFileBrowserItemElement {
+		if (data instanceof FileBrowserItem) {
+			return data;
+		}
+
 		return new FileBrowserItem(data) as any;
 	}
 
@@ -78,5 +90,9 @@ export class FileBrowserItem implements IFileBrowserItemWrapper {
 		key = key.toLowerCase().replace(/[^0-9a-z\-.]/g, '-');
 
 		return key;
+	}
+
+	toJSON(): object {
+		return this.data;
 	}
 }

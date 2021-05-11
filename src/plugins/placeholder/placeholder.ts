@@ -1,16 +1,16 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import './placeholder.less';
 
+import type { IJodit } from '../../types';
 import { Config } from '../../config';
 import * as consts from '../../core/constants';
 import { css, attr } from '../../core/helpers';
 import { Dom } from '../../core/dom';
-import { IJodit } from '../../types';
 import { Plugin } from '../../core/plugin';
 import { MAY_BE_REMOVED_WITH_KEY } from '../../core/constants';
 import { debounce } from '../../core/decorators';
@@ -59,6 +59,45 @@ Config.prototype.useInputsPlaceholder = true;
  * ```
  */
 Config.prototype.placeholder = 'Type something';
+
+/**
+ * Check if root node is empty
+ * @param root
+ */
+export function isEditorEmpty(root: HTMLElement): boolean {
+	if (!root.firstChild) {
+		return true;
+	}
+
+	const first = root.firstChild;
+
+	if (
+		MAY_BE_REMOVED_WITH_KEY.test(first.nodeName) ||
+		/^(TABLE)$/i.test(first.nodeName)
+	) {
+		return false;
+	}
+
+	const next = Dom.next(
+		first,
+		node => node && !Dom.isEmptyTextNode(node),
+		root
+	);
+
+	if (Dom.isText(first) && !next) {
+		return Dom.isEmptyTextNode(first);
+	}
+
+	return (
+		!next &&
+		Dom.each(
+			first,
+			elm =>
+				!Dom.isTag(elm, ['ul', 'li', 'ol']) &&
+				(Dom.isEmpty(elm) || Dom.isTag(elm, 'br'))
+		)
+	);
+}
 
 /**
  * Show placeholder inside empty editor
@@ -214,50 +253,11 @@ export class placeholder extends Plugin {
 			return;
 		}
 
-		if (!this.isEmpty(editor.editor)) {
+		if (!isEditorEmpty(editor.editor)) {
 			this.hide();
 		} else {
 			this.show();
 		}
-	}
-
-	private isEmpty(root: HTMLElement): boolean {
-		if (!root.firstChild) {
-			return true;
-		}
-
-		const first = root.firstChild;
-
-		if (
-			MAY_BE_REMOVED_WITH_KEY.test(first.nodeName) ||
-			/^(TABLE)$/i.test(first.nodeName)
-		) {
-			return false;
-		}
-
-		const next = Dom.next(
-			first,
-			node => node && !Dom.isEmptyTextNode(node),
-			root
-		);
-
-		if (Dom.isText(first) && !next) {
-			return Dom.isEmptyTextNode(first);
-		}
-
-		if (
-			!next &&
-			Dom.each(
-				first,
-				elm =>
-					!Dom.isTag(elm, ['ul', 'li', 'ol']) &&
-					(Dom.isEmpty(elm) || Dom.isTag(elm, 'br'))
-			)
-		) {
-			return true;
-		}
-
-		return false;
 	}
 
 	protected beforeDestruct(jodit: IJodit): void {

@@ -1,55 +1,55 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import './styles';
 
-import { Config, OptionsDefault } from '../../config';
+import { Config } from '../../config';
 import * as consts from '../../core/constants';
-import { Dialog, Alert } from '../dialog/';
+import { Dialog } from '../dialog/';
 
-import {
+import type {
 	IFileBrowser,
 	IFileBrowserAnswer,
 	IFileBrowserCallBackData,
 	IFileBrowserOptions,
-	ISource,
-	ISourceFile,
-	ISourcesFiles,
 	IFileBrowserState,
 	IFileBrowserItem,
 	IFileBrowserDataProvider,
 	IJodit,
 	IStorage,
 	IDictionary,
-	ImageEditorActionBox,
 	IUploader,
 	IUploaderOptions,
 	IDialog,
-	CanUndef
+	CanUndef,
+	IViewOptions
 } from '../../types/';
 
-import { ImageEditor } from '..';
 import { Storage } from '../../core/storage/';
-import { each, extend, error, isFunction, isString } from '../../core/helpers/';
+import { error, isFunction, isString, ConfigProto } from '../../core/helpers/';
 import { ViewWithToolbar } from '../../core/view/view-with-toolbar';
 
 import './config';
 
 import { Dom } from '../../core/dom';
 import { ObserveObject } from '../../core/events/';
-import { FileBrowserItem } from './builders/item';
 import { F_CLASS, ICON_LOADER } from './consts';
 import { makeDataProvider } from './factories';
-import autobind from 'autobind-decorator';
 import { stateListeners } from './listeners/state-listeners';
 import { nativeListeners } from './listeners/native-listeners';
 import { selfListeners } from './listeners/self-listeners';
 import { DEFAULT_SOURCE_NAME } from './data-provider';
+import { autobind } from '../../core/decorators';
 
 export class FileBrowser extends ViewWithToolbar implements IFileBrowser {
+	/** @override */
+	className(): string {
+		return 'FileBrowser';
+	}
+
 	private loader = this.c.div(F_CLASS + '__loader', ICON_LOADER);
 	private browser = this.c.div(F_CLASS + ' non-selected');
 	private status_line = this.c.div(F_CLASS + '__status');
@@ -64,7 +64,8 @@ export class FileBrowser extends ViewWithToolbar implements IFileBrowser {
 
 		activeElements: [],
 		elements: [],
-		sources: {},
+		messages: [],
+		sources: [],
 		view: 'tiles',
 		sortBy: 'changed-desc',
 		filterWord: '',
@@ -78,31 +79,16 @@ export class FileBrowser extends ViewWithToolbar implements IFileBrowser {
 		this.files.appendChild(this.loader.cloneNode(true));
 
 		return this.dataProvider
-			.items(this.state.currentPath, this.state.currentSource)
-			.then(resp => {
-				let process:
-					| ((resp: IFileBrowserAnswer) => IFileBrowserAnswer)
-					| undefined = (this.o.items as any).process;
-
-				if (!process) {
-					process = this.o.ajax.process;
-				}
-
-				if (process) {
-					const respData: IFileBrowserAnswer = process.call(
-						self,
-						resp
-					) as IFileBrowserAnswer;
-
-					this.generateItemsList(respData.data.sources);
-
-					this.state.activeElements = [];
-				}
+			.items(this.state.currentPath, this.state.currentSource, {
+				sortBy: this.state.sortBy,
+				onlyImages: this.state.onlyImages,
+				filterWord: this.state.filterWord
 			})
-			.catch((error: Error) => {
-				Alert(error.message).bindDestruct(this);
-				this.errorHandler(error);
-			});
+			.then(resp => {
+				this.state.elements = resp;
+				this.state.activeElements = [];
+			})
+			.catch(this.status);
 	}
 
 	async loadTree(): Promise<any> {
@@ -124,22 +110,7 @@ export class FileBrowser extends ViewWithToolbar implements IFileBrowser {
 			const tree = this.dataProvider
 				.tree(this.state.currentPath, this.state.currentSource)
 				.then(resp => {
-					let process:
-						| ((resp: IFileBrowserAnswer) => IFileBrowserAnswer)
-						| undefined = (this.o.folder as any).process;
-
-					if (!process) {
-						process = this.o.ajax.process;
-					}
-
-					if (process) {
-						const respData = process.call(
-							self,
-							resp
-						) as IFileBrowserAnswer;
-
-						this.state.sources = respData.data.sources;
-					}
+					this.state.sources = resp;
 				})
 				.catch(e => {
 					this.errorHandler(
@@ -157,66 +128,20 @@ export class FileBrowser extends ViewWithToolbar implements IFileBrowser {
 		return items.catch(error);
 	}
 
-	async deleteFile(name: string, source: string): Promise<any> {
+	deleteFile(name: string, source: string): Promise<void> {
 		return this.dataProvider
 			.fileRemove(this.state.currentPath, name, source)
-			.then(resp => {
-				if (this.o.remove && this.o.remove.process) {
-					resp = this.o.remove.process.call(this, resp);
-				}
-
-				if (!this.o.isSuccess(resp)) {
-					throw error(this.o.getMessage(resp));
-				} else {
-					this.status(
-						this.o.getMessage(resp) ||
-							this.i18n('File "%s" was deleted', name),
-						true
-					);
-				}
+			.then(message => {
+				this.status(
+					message || this.i18n('File "%s" was deleted', name),
+					true
+				);
 			})
 			.catch(this.status);
 	}
 
-	private generateItemsList(sources: ISourcesFiles) {
-		const elements: IFileBrowserItem[] = [];
-
-		const state = this.state,
-			canBeFile = (item: ISourceFile): boolean =>
-				!this.state.onlyImages ||
-				item.isImage === undefined ||
-				item.isImage,
-			inFilter = (item: ISourceFile): boolean =>
-				!state.filterWord.length ||
-				this.o.filter === undefined ||
-				this.o.filter(item, state.filterWord);
-
-		each<ISource>(sources, (source_name, source) => {
-			if (source.files && source.files.length) {
-				if (typeof this.o.sort === 'function') {
-					source.files.sort((a, b) =>
-						this.o.sort(a, b, state.sortBy)
-					);
-				}
-
-				source.files.forEach((item: ISourceFile) => {
-					if (inFilter(item) && canBeFile(item)) {
-						elements.push(
-							FileBrowserItem.create({
-								...item,
-								sourceName: source_name,
-								source
-							})
-						);
-					}
-				});
-			}
-		});
-
-		this.state.elements = elements;
-	}
-
-	private onSelect(callback?: (data: IFileBrowserCallBackData) => void) {
+	// eslint-disable-next-line no-unused-vars
+	private onSelect(callback?: (_: IFileBrowserCallBackData) => void) {
 		return () => {
 			if (this.state.activeElements.length) {
 				const files: string[] = [];
@@ -254,7 +179,7 @@ export class FileBrowser extends ViewWithToolbar implements IFileBrowser {
 		if (resp instanceof Error) {
 			this.status(this.i18n(resp.message));
 		} else {
-			this.status(this.o.getMessage(resp));
+			this.status(this.dataProvider.getMessage(resp));
 		}
 	};
 
@@ -273,7 +198,7 @@ export class FileBrowser extends ViewWithToolbar implements IFileBrowser {
 	 *
 	 * @return {boolean}
 	 */
-	isOpened(): boolean {
+	get isOpened(): boolean {
 		return this.dialog.isOpened && this.browser.style.display !== 'none';
 	}
 
@@ -346,7 +271,7 @@ export class FileBrowser extends ViewWithToolbar implements IFileBrowser {
 	 */
 	@autobind
 	open(
-		callback: CanUndef<(data: IFileBrowserCallBackData) => void> = this.o
+		callback: CanUndef<(_: IFileBrowserCallBackData) => void> = this.o
 			.defaultCallback,
 		onlyImages: boolean = false
 	): Promise<void> {
@@ -376,7 +301,7 @@ export class FileBrowser extends ViewWithToolbar implements IFileBrowser {
 
 			const header = this.c.div();
 
-			this.toolbar.build(this.o.buttons).appendTo(header);
+			this.toolbar.build(this.o.buttons ?? []).appendTo(header);
 
 			this.dialog.open(this.browser, header);
 
@@ -386,76 +311,6 @@ export class FileBrowser extends ViewWithToolbar implements IFileBrowser {
 		});
 	}
 
-	/**
-	 * Open Image Editor
-	 *
-	 * @method openImageEditor
-	 */
-	openImageEditor = (
-		href: string,
-		name: string,
-		path: string,
-		source: string,
-		onSuccess?: () => void,
-		onFailed?: (error: Error) => void
-	): Promise<Dialog> => {
-		return this.getInstance<ImageEditor>('ImageEditor', this.o).open(
-			href,
-			(
-				newname: string | void,
-				box: ImageEditorActionBox,
-				success: () => void,
-				failed: (error: Error) => void
-			) => {
-				let promise: Promise<any>;
-
-				if (box.action === 'resize') {
-					promise = this.dataProvider.resize(
-						path,
-						source,
-						name,
-						newname,
-						box.box
-					);
-				} else {
-					promise = this.dataProvider.crop(
-						path,
-						source,
-						name,
-						newname,
-						box.box
-					);
-				}
-
-				promise
-					.then(resp => {
-						if (this.o.isSuccess(resp)) {
-							this.loadTree().then(() => {
-								success();
-
-								if (onSuccess) {
-									onSuccess();
-								}
-							});
-						} else {
-							failed(error(this.o.getMessage(resp)));
-
-							if (onFailed) {
-								onFailed(error(this.o.getMessage(resp)));
-							}
-						}
-					})
-					.catch(error => {
-						failed(error);
-
-						if (onFailed) {
-							onFailed(error);
-						}
-					});
-			}
-		);
-	};
-
 	elementsMap: IDictionary<{
 		elm: HTMLElement;
 		item: IFileBrowserItem;
@@ -463,16 +318,10 @@ export class FileBrowser extends ViewWithToolbar implements IFileBrowser {
 
 	private initUploader(editor?: IFileBrowser | IJodit) {
 		const self = this,
-			uploaderOptions: IUploaderOptions<IUploader> = extend(
-				true,
-				{},
-				Config.defaultOptions.uploader,
-				self.o.uploader,
-				{
-					...(editor?.options?.uploader as IUploaderOptions<
-						IUploader
-					>)
-				}
+			options = editor?.options?.uploader,
+			uploaderOptions: IUploaderOptions<IUploader> = ConfigProto(
+				options || {},
+				Config.defaultOptions.uploader
 			) as IUploaderOptions<IUploader>;
 
 		const uploadHandler = () => {
@@ -492,30 +341,34 @@ export class FileBrowser extends ViewWithToolbar implements IFileBrowser {
 	constructor(options?: IFileBrowserOptions) {
 		super(options);
 
+		this.attachEvents(options as IViewOptions);
+
 		const self: FileBrowser = this;
 
-		self.options = new OptionsDefault(
-			extend(
-				true,
-				{},
-				self.options,
-				Config.defaultOptions.filebrowser,
-				options
-			)
+		self.options = ConfigProto(
+			options || {},
+			Config.defaultOptions.filebrowser
 		) as IFileBrowserOptions;
 
-		self.storage = Storage.makeStorage(
-			this.o.filebrowser.saveStateInStorage
-		);
+		self.storage = Storage.makeStorage(this.o.saveStateInStorage);
 
 		self.dataProvider = makeDataProvider(self, self.options);
 
 		self.dialog = new Dialog({
 			fullsize: self.o.fullsize,
+			ownerWindow: self.ownerWindow,
 			theme: self.o.theme,
 			globalFullSize: self.o.globalFullSize,
 			language: this.o.language,
-			buttons: ['fullsize', 'dialog.close']
+			minWidth: Math.min(700, screen.width),
+			minHeight: 300,
+			buttons: this.o.headerButtons ?? ['fullsize', 'dialog.close']
+		});
+
+		['afterClose', 'beforeOpen'].forEach(proxyEvent => {
+			self.dialog.events.on(self.dialog, proxyEvent, () => {
+				this.e.fire(proxyEvent);
+			});
 		});
 
 		if (self.o.showFoldersPanel) {
@@ -531,7 +384,7 @@ export class FileBrowser extends ViewWithToolbar implements IFileBrowser {
 
 		self.dialog.setSize(self.o.width, self.o.height);
 
-		[
+		const keys: Array<keyof IFileBrowserOptions> = [
 			'getLocalFileByUrl',
 			'crop',
 			'resize',
@@ -545,20 +398,20 @@ export class FileBrowser extends ViewWithToolbar implements IFileBrowser {
 			'folder',
 			'items',
 			'permissions'
-		].forEach(key => {
-			if (this.options[key] !== null) {
-				(this.options as IDictionary)[key] = extend(
-					true,
-					{},
-					this.o.ajax,
-					this.options[key]
+		];
+
+		keys.forEach(key => {
+			if (this.options[key] != null) {
+				(this.options as IDictionary)[key] = ConfigProto(
+					this.options[key] as IDictionary,
+					this.o.ajax
 				);
 			}
 		});
 
 		const view = this.storage.get(F_CLASS + '_view');
 
-		if (view && this.o.view === null) {
+		if (view && this.o.view == null) {
 			self.state.view = view === 'list' ? 'list' : 'tiles';
 		} else {
 			self.state.view = self.o.view === 'list' ? 'list' : 'tiles';

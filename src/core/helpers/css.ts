@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import type { IStyle, StyleValue } from '../../types';
@@ -41,9 +41,10 @@ export const css = (
 			}
 
 			if (
-				!isVoid(_value) &&
-				css(elm, _key, undefined, true) !==
-					normalizeCssValue(_key, _value)
+				_value !== undefined &&
+				(_value == null ||
+					css(elm, _key, undefined, true) !==
+						normalizeCssValue(_key, _value))
 			) {
 				(elm.style as any)[_key] = _value;
 			}
@@ -96,11 +97,11 @@ export const clearCenterAlign = (image: HTMLElement): void => {
 	if (css(image, 'display') === 'block') {
 		css(image, 'display', '');
 	}
-	if (
-		image.style.marginLeft === 'auto' &&
-		image.style.marginRight === 'auto'
-	) {
-		image.style.marginLeft = '';
-		image.style.marginRight = '';
+
+	const { style } = image;
+
+	if (style.marginLeft === 'auto' && style.marginRight === 'auto') {
+		style.marginLeft = '';
+		style.marginRight = '';
 	}
 };

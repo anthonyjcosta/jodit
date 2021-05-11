@@ -1,13 +1,13 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
-describe('Test plugins', function() {
+describe('Test plugins', function () {
 	getBox().style.width = 'auto';
 
-	describe('Copy format plugin', function() {
-		it('Should copy fontWeight from element and paste it in new selection', function() {
+	describe('Copy format plugin', function () {
+		it('Should copy fontWeight from element and paste it in new selection', function () {
 			getBox().style.width = 'auto';
 			const editor = getJodit();
 
@@ -39,7 +39,7 @@ describe('Test plugins', function() {
 			);
 		});
 
-		it('Should copy fontSize from element and paste it in new selection', function() {
+		it('Should copy fontSize from element and paste it in new selection', function () {
 			getBox().style.width = 'auto';
 			const editor = getJodit();
 
@@ -69,8 +69,8 @@ describe('Test plugins', function() {
 			);
 		});
 
-		describe('Test', function() {
-			it('Should copy fontSize and color from element and paste it in new selection', function() {
+		describe('Test', function () {
+			it('Should copy fontSize and color from element and paste it in new selection', function () {
 				getBox().style.width = 'auto';
 				const editor = getJodit();
 
@@ -102,7 +102,7 @@ describe('Test plugins', function() {
 			});
 		});
 
-		it('Should toggle active state after double click', function() {
+		it('Should toggle active state after double click', function () {
 			getBox().style.width = 'auto';
 
 			const editor = getJodit();
@@ -143,8 +143,8 @@ describe('Test plugins', function() {
 			);
 		});
 
-		describe('For image', function() {
-			it('Should copy format from one image to another', function() {
+		describe('For image', function () {
+			it('Should copy format from one image to another', function () {
 				getBox().style.width = 'auto';
 
 				const editor = getJodit(),
@@ -190,8 +190,8 @@ describe('Test plugins', function() {
 			});
 		});
 
-		describe('Set cursor inside em[style=background] > strong elements', function() {
-			it('Should copy fontWeight from strong element, copy italic and background  style from em  and paste it in new selection', function() {
+		describe('Set cursor inside em[style=background] > strong elements', function () {
+			it('Should copy fontWeight from strong element, copy italic and background  style from em  and paste it in new selection', function () {
 				getBox().style.width = 'auto';
 				const editor = getJodit();
 
@@ -230,16 +230,16 @@ describe('Test plugins', function() {
 		});
 	});
 
-	describe('Add new Line plugin', function() {
-		it('Should not add new line element in container before first use', function() {
+	describe('Add new Line plugin', function () {
+		it('Should not add new line element in container before first use', function () {
 			const editor = getJodit();
 			expect(
 				editor.container.querySelectorAll('.jodit-add-new-line').length
 			).equals(0);
 		});
 
-		const moveCursorUnder = function(editor, elm) {
-			simulateEvent('mousemove', 0, editor.editor, function(e) {
+		const moveCursorUnder = function (editor, elm) {
+			simulateEvent('mousemove', 0, editor.editor, function (e) {
 				const pos = Jodit.modules.Helpers.position(elm, editor);
 
 				e.clientX = pos.left + 5;
@@ -247,7 +247,7 @@ describe('Test plugins', function() {
 			});
 		};
 
-		it('Should show .jodit-add-new-line after user move mouse under Table,Ifrmae or IMG ', function() {
+		it('Should show .jodit-add-new-line after user move mouse under Table,Ifrmae or IMG ', function () {
 			const editor = getJodit();
 			editor.value =
 				'<table>' +
@@ -280,7 +280,7 @@ describe('Test plugins', function() {
 			);
 		});
 
-		it('Should add new paragraph after user clicked on newline ', function() {
+		it('Should add new paragraph after user clicked on newline ', function () {
 			const editor = getJodit();
 			editor.value =
 				'<table><tbody>' +
@@ -321,7 +321,7 @@ describe('Test plugins', function() {
 			);
 		});
 
-		it('Should add new paragraph after user clicked on newline below table', function() {
+		it('Should add new paragraph after user clicked on newline below table', function () {
 			const editor = getJodit();
 			editor.value =
 				'<table><tbody>' +
@@ -338,7 +338,7 @@ describe('Test plugins', function() {
 				).top
 			); // elementFromPoint works only with visible part of view
 
-			simulateEvent('mousemove', 0, editor.editor, function(data) {
+			simulateEvent('mousemove', 0, editor.editor, function (data) {
 				const pos = Jodit.modules.Helpers.position(
 					editor.editor.firstChild,
 					editor
@@ -366,7 +366,7 @@ describe('Test plugins', function() {
 			);
 		});
 
-		it('Should add new paragraph after user clicked on newline below table in IFRAME mode', function() {
+		it('Should add new paragraph after user clicked on newline below table in IFRAME mode', function () {
 			const editor = getJodit({
 				ifarme: true
 			});
@@ -385,7 +385,7 @@ describe('Test plugins', function() {
 				).top
 			); // elementFromPoint works only with visible part of view
 
-			simulateEvent('mousemove', 0, editor.editor, function(data) {
+			simulateEvent('mousemove', 0, editor.editor, function (data) {
 				const pos = Jodit.modules.Helpers.position(
 					editor.editor.firstChild,
 					editor
@@ -413,8 +413,8 @@ describe('Test plugins', function() {
 			);
 		});
 
-		describe('Insert line on top of IMG element that was inside P element', function() {
-			it('Should insert new P before parent P element', function() {
+		describe('Insert line on top of IMG element that was inside P element', function () {
+			it('Should insert new P before parent P element', function () {
 				const editor = getJodit();
 				editor.value =
 					'<p><img src="tests/artio.jpg" style="width: 100px; height: 100px;" alt=""></p>';
@@ -452,11 +452,11 @@ describe('Test plugins', function() {
 		});
 	});
 
-	describe('Edit image tests', function() {
-		describe('Image editor', function() {
-			describe('Crop mode', function() {
-				describe('Enable ratio', function() {
-					it('Should deny crop image without ratio', function(done) {
+	describe('Edit image tests', function () {
+		describe('Image editor', function () {
+			describe('Crop mode', function () {
+				describe('Enable ratio', function () {
+					it('Should deny crop image without ratio', function (done) {
 						const area = appendTestArea();
 						const editor = new Jodit(area, {
 							observer: {
@@ -480,7 +480,6 @@ describe('Test plugins', function() {
 
 						simulateEvent(
 							'dblclick',
-							0,
 							editor.editor.querySelector('img')
 						);
 
@@ -494,7 +493,7 @@ describe('Test plugins', function() {
 
 						editor.filebrowser.events.on(
 							'afterImageEditor',
-							function() {
+							function () {
 								const imageEditor = getOpenedDialog(editor);
 
 								expect(imageEditor).is.not.null;
@@ -536,7 +535,7 @@ describe('Test plugins', function() {
 									'mousedown',
 									0,
 									cropper.querySelector('.jodit_bottomright'),
-									function(e) {
+									function (e) {
 										const pos = Jodit.modules.Helpers.offset(
 											cropper,
 											editor,
@@ -551,7 +550,7 @@ describe('Test plugins', function() {
 									'mousemove',
 									0,
 									editor.ownerWindow,
-									function(e) {
+									function (e) {
 										const pos = Jodit.modules.Helpers.offset(
 											cropper,
 											editor,
@@ -566,7 +565,7 @@ describe('Test plugins', function() {
 									'mouseup',
 									0,
 									editor.ownerWindow,
-									function(e) {
+									function (e) {
 										const pos = Jodit.modules.Helpers.offset(
 											cropper,
 											editor,
@@ -597,8 +596,8 @@ describe('Test plugins', function() {
 					}).timeout(7000);
 				});
 
-				describe('Disable ratio', function() {
-					it('Should allow crop image without ratio', function(done) {
+				describe('Disable ratio', function () {
+					it('Should allow crop image without ratio', function (done) {
 						const area = appendTestArea();
 
 						const editor = new Jodit(area, {
@@ -622,7 +621,6 @@ describe('Test plugins', function() {
 
 						simulateEvent(
 							'dblclick',
-							0,
 							editor.editor.querySelector('img')
 						);
 
@@ -636,7 +634,7 @@ describe('Test plugins', function() {
 
 						editor.filebrowser.events.on(
 							'afterImageEditor',
-							function() {
+							function () {
 								const imageEditor = getOpenedDialog(editor);
 
 								expect(imageEditor).is.not.null;
@@ -655,7 +653,6 @@ describe('Test plugins', function() {
 
 								simulateEvent(
 									'click',
-									0,
 									imageEditor.querySelector(
 										'[data-area=crop] > div'
 									)
@@ -680,18 +677,16 @@ describe('Test plugins', function() {
 									.querySelector(
 										'[data-area=crop].jodit-image-editor_active'
 									)
-									.querySelector(
-										'.jodit-button_radio_group button:last-child'
-									);
+									.querySelector('.jodi-switcher input');
 
 								expect(disableRatioBtn).not.is.null;
-								simulateEvent('click', 0, disableRatioBtn);
+								disableRatioBtn.checked = false;
+								simulateEvent('change', disableRatioBtn);
 
 								simulateEvent(
 									'mousedown',
-									0,
 									cropper.querySelector('.jodit_bottomright'),
-									function(e) {
+									function (e) {
 										const pos = Jodit.modules.Helpers.offset(
 											cropper,
 											editor,
@@ -704,9 +699,8 @@ describe('Test plugins', function() {
 
 								simulateEvent(
 									'mousemove',
-									0,
 									editor.ownerWindow,
-									function(e) {
+									function (e) {
 										const pos = Jodit.modules.Helpers.offset(
 											cropper,
 											editor,
@@ -719,9 +713,8 @@ describe('Test plugins', function() {
 
 								simulateEvent(
 									'mouseup',
-									0,
 									editor.ownerWindow,
-									function(e) {
+									function (e) {
 										const pos = Jodit.modules.Helpers.offset(
 											cropper,
 											editor,
@@ -753,9 +746,9 @@ describe('Test plugins', function() {
 				});
 			});
 
-			describe('Resize mode', function() {
-				describe('Enable ratio', function() {
-					it('Should deny resize image without ratio', function(done) {
+			describe('Resize mode', function () {
+				describe('Enable ratio', function () {
+					it('Should deny resize image without ratio', function (done) {
 						const area = appendTestArea();
 						const editor = new Jodit(area, {
 							observer: {
@@ -785,7 +778,7 @@ describe('Test plugins', function() {
 
 						editor.filebrowser.events.on(
 							'afterImageEditor',
-							function() {
+							function () {
 								const imageEditor = getOpenedDialog(editor);
 								expect(imageEditor).is.not.null;
 
@@ -827,7 +820,7 @@ describe('Test plugins', function() {
 									'mousedown',
 									0,
 									resizer.querySelector('.jodit_bottomright'),
-									function(e) {
+									function (e) {
 										const pos = Jodit.modules.Helpers.offset(
 											resizer,
 											editor,
@@ -842,7 +835,7 @@ describe('Test plugins', function() {
 									'mousemove',
 									0,
 									editor.ownerWindow,
-									function(e) {
+									function (e) {
 										const pos = Jodit.modules.Helpers.offset(
 											resizer,
 											editor,
@@ -857,7 +850,7 @@ describe('Test plugins', function() {
 									'mouseup',
 									0,
 									editor.ownerWindow,
-									function(e) {
+									function (e) {
 										const pos = Jodit.modules.Helpers.offset(
 											resizer,
 											editor,
@@ -888,8 +881,8 @@ describe('Test plugins', function() {
 					}).timeout(7000);
 				});
 
-				describe('Disable ratio', function() {
-					it('Should allow resize image without ratio', function(done) {
+				describe('Disable ratio', function () {
+					it('Should allow resize image without ratio', function (done) {
 						const area = appendTestArea();
 						const editor = new Jodit(area, {
 							observer: {
@@ -910,7 +903,6 @@ describe('Test plugins', function() {
 
 						simulateEvent(
 							'dblclick',
-							0,
 							editor.editor.querySelector('img')
 						);
 
@@ -918,7 +910,7 @@ describe('Test plugins', function() {
 
 						editor.filebrowser.events.on(
 							'afterImageEditor',
-							function() {
+							function () {
 								const imageEditor = getOpenedDialog(editor);
 								expect(imageEditor).is.not.null;
 
@@ -951,12 +943,11 @@ describe('Test plugins', function() {
 									.querySelector(
 										'[data-area=resize].jodit-image-editor_active'
 									)
-									.querySelector(
-										'.jodit-button_radio_group button:last-child'
-									);
+									.querySelector('.jodi-switcher input');
 
 								expect(disableRatioBtn).not.is.null;
-								simulateEvent('click', 0, disableRatioBtn);
+								disableRatioBtn.checked = false;
+								simulateEvent('change', disableRatioBtn);
 
 								const resizer = imageEditor.querySelector(
 									'.jodit-image-editor__resizer'
@@ -969,9 +960,8 @@ describe('Test plugins', function() {
 
 								simulateEvent(
 									'mousedown',
-									0,
 									resizer.querySelector('.jodit_bottomright'),
-									function(e) {
+									function (e) {
 										const pos = Jodit.modules.Helpers.offset(
 											resizer,
 											editor,
@@ -984,9 +974,8 @@ describe('Test plugins', function() {
 
 								simulateEvent(
 									'mousemove',
-									0,
 									editor.ownerWindow,
-									function(e) {
+									function (e) {
 										const pos = Jodit.modules.Helpers.offset(
 											resizer,
 											editor,
@@ -999,9 +988,8 @@ describe('Test plugins', function() {
 
 								simulateEvent(
 									'mouseup',
-									0,
 									editor.ownerWindow,
-									function(e) {
+									function (e) {
 										const pos = Jodit.modules.Helpers.offset(
 											resizer,
 											editor,
@@ -1035,8 +1023,8 @@ describe('Test plugins', function() {
 		});
 	});
 
-	describe('Indent plugin', function() {
-		it('Should set active outdent button if current container has marginLeft', function() {
+	describe('Indent plugin', function () {
+		it('Should set active outdent button if current container has marginLeft', function () {
 			const area = appendTestArea();
 			const editor = new Jodit(area, {
 				toolbarAdaptive: false,
@@ -1057,8 +1045,8 @@ describe('Test plugins', function() {
 				.false;
 		});
 
-		describe('Press Indent button', function() {
-			it('Should increase indent for current blocks', function() {
+		describe('Press Indent button', function () {
+			it('Should increase indent for current blocks', function () {
 				const area = appendTestArea();
 				const editor = new Jodit(area, {
 					toolbarAdaptive: false,
@@ -1092,8 +1080,8 @@ describe('Test plugins', function() {
 			});
 		});
 
-		describe('Run indent command for inline elements', function() {
-			it('should wrap elements in block and change margin for it', function() {
+		describe('Run indent command for inline elements', function () {
+			it('should wrap elements in block and change margin for it', function () {
 				const area = appendTestArea();
 				const editor = new Jodit(area);
 				editor.value = '<p>a<br>b<br>c<br></p>';
@@ -1106,8 +1094,8 @@ describe('Test plugins', function() {
 		});
 	});
 
-	describe('Symbols plugin', function() {
-		it('Should create symbol button in toolbar and after click open dialog with symbols', function() {
+	describe('Symbols plugin', function () {
+		it('Should create symbol button in toolbar and after click open dialog with symbols', function () {
 			const area = appendTestArea();
 			const editor = new Jodit(area, {
 				toolbarAdaptive: false,
@@ -1123,8 +1111,8 @@ describe('Test plugins', function() {
 			expect(null).does.not.equal(dialog);
 		});
 
-		describe('Symbols dialog', function() {
-			it('Should have focus on first element after open', function() {
+		describe('Symbols dialog', function () {
+			it('Should have focus on first element after open', function () {
 				const area = appendTestArea();
 				const editor = new Jodit(area, {
 					toolbarAdaptive: false,
@@ -1144,8 +1132,8 @@ describe('Test plugins', function() {
 				);
 			});
 
-			describe('Press key left', function() {
-				it('Should select previous element', function() {
+			describe('Press key left', function () {
+				it('Should select previous element', function () {
 					const area = appendTestArea();
 					const editor = new Jodit(area, {
 						toolbarAdaptive: false,
@@ -1166,7 +1154,7 @@ describe('Test plugins', function() {
 						'keydown',
 						Jodit.KEY_LEFT,
 						currentActive,
-						function(data) {
+						function (data) {
 							data.target = currentActive;
 						}
 					);
@@ -1177,8 +1165,8 @@ describe('Test plugins', function() {
 				});
 			});
 
-			describe('Press key right', function() {
-				it('Should select next element', function() {
+			describe('Press key right', function () {
+				it('Should select next element', function () {
 					const area = appendTestArea();
 					const editor = new Jodit(area, {
 						toolbarAdaptive: false,
@@ -1199,7 +1187,7 @@ describe('Test plugins', function() {
 						'keydown',
 						Jodit.KEY_RIGHT,
 						currentActive,
-						function(data) {
+						function (data) {
 							data.target = currentActive;
 						}
 					);
@@ -1209,8 +1197,8 @@ describe('Test plugins', function() {
 					);
 				});
 			});
-			describe('Press key top', function() {
-				it('Should select element above', function() {
+			describe('Press key top', function () {
+				it('Should select element above', function () {
 					const area = appendTestArea();
 
 					const editor = new Jodit(area, {
@@ -1233,7 +1221,7 @@ describe('Test plugins', function() {
 						'keydown',
 						Jodit.KEY_UP,
 						currentActive,
-						function(data) {
+						function (data) {
 							data.target = currentActive;
 						}
 					);
@@ -1248,7 +1236,7 @@ describe('Test plugins', function() {
 						'keydown',
 						Jodit.KEY_UP,
 						currentActive,
-						function(data) {
+						function (data) {
 							data.target = currentActive;
 						}
 					);
@@ -1259,8 +1247,8 @@ describe('Test plugins', function() {
 				});
 			});
 
-			describe('Press key bottom', function() {
-				it('Should select element below', function() {
+			describe('Press key bottom', function () {
+				it('Should select element below', function () {
 					const area = appendTestArea();
 					const editor = new Jodit(area, {
 						toolbarAdaptive: false,
@@ -1281,7 +1269,7 @@ describe('Test plugins', function() {
 						'keydown',
 						Jodit.KEY_DOWN,
 						currentActive,
-						function(data) {
+						function (data) {
 							data.target = currentActive;
 						}
 					);
@@ -1296,7 +1284,7 @@ describe('Test plugins', function() {
 						'keydown',
 						Jodit.KEY_DOWN,
 						currentActive,
-						function(data) {
+						function (data) {
 							data.target = currentActive;
 						}
 					);
@@ -1307,8 +1295,8 @@ describe('Test plugins', function() {
 				});
 			});
 
-			describe('Press Enter or mousdown on element', function() {
-				it('Should insert character', function() {
+			describe('Press Enter or mousdown on element', function () {
+				it('Should insert character', function () {
 					const area = appendTestArea();
 					const editor = new Jodit(area, {
 						toolbarAdaptive: false,
@@ -1346,8 +1334,8 @@ describe('Test plugins', function() {
 			});
 		});
 
-		describe('Symbols popup', function() {
-			it('Should create popup this symbols', function() {
+		describe('Symbols popup', function () {
+			it('Should create popup this symbols', function () {
 				const area = appendTestArea();
 				const editor = new Jodit(area, {
 					toolbarAdaptive: false,
@@ -1381,9 +1369,9 @@ describe('Test plugins', function() {
 		});
 	});
 
-	describe('Hotkeys', function() {
-		describe('Override default shortcuts for some commands', function() {
-			it('Should work default shortcuts for another commands', function() {
+	describe('Hotkeys', function () {
+		describe('Override default shortcuts for some commands', function () {
+			it('Should work default shortcuts for another commands', function () {
 				const area = appendTestArea(),
 					editor = new Jodit(area, {
 						commandToHotkeys: {
@@ -1399,15 +1387,15 @@ describe('Test plugins', function() {
 				range.setEnd(editor.editor.firstChild.firstChild, 8);
 
 				// standart ctrl+u
-				simulateEvent('keydown', 85, editor.editor, function(data) {
+				simulateEvent('keydown', 85, editor.editor, function (data) {
 					// data.shiftKey = true;
 					data.ctrlKey = true;
 				});
 
 				expect(editor.value).equals('<p>test<u> tes</u>t test</p>');
 			});
-			describe('Replace ctrl+b to ctrl+shift+b for bold command', function() {
-				it('Should not execute bold on ctrl+b', function() {
+			describe('Replace ctrl+b to ctrl+shift+b for bold command', function () {
+				it('Should not execute bold on ctrl+b', function () {
 					const area = appendTestArea(),
 						editor = new Jodit(area, {
 							commandToHotkeys: {
@@ -1423,24 +1411,34 @@ describe('Test plugins', function() {
 					range.setEnd(editor.editor.firstChild.firstChild, 8);
 
 					// standart ctrl+b
-					simulateEvent('keydown', 66, editor.editor, function(data) {
-						// data.shiftKey = true;
-						data.ctrlKey = true;
-					});
+					simulateEvent(
+						'keydown',
+						66,
+						editor.editor,
+						function (data) {
+							// data.shiftKey = true;
+							data.ctrlKey = true;
+						}
+					);
 
 					expect(editor.value).equals('<p>test test test</p>'); // should not sork
 
-					simulateEvent('keydown', 66, editor.editor, function(data) {
-						data.shiftKey = true;
-						data.ctrlKey = true;
-					});
+					simulateEvent(
+						'keydown',
+						66,
+						editor.editor,
+						function (data) {
+							data.shiftKey = true;
+							data.ctrlKey = true;
+						}
+					);
 
 					expect(editor.value).equals(
 						'<p>test<strong> tes</strong>t test</p>'
 					);
 				});
 
-				it('Should execute bold on ctrl+shift+b', function() {
+				it('Should execute bold on ctrl+shift+b', function () {
 					const area = appendTestArea(),
 						editor = new Jodit(area, {
 							commandToHotkeys: {
@@ -1455,10 +1453,15 @@ describe('Test plugins', function() {
 					range.setStart(editor.editor.firstChild.firstChild, 4);
 					range.setEnd(editor.editor.firstChild.firstChild, 8);
 
-					simulateEvent('keydown', 66, editor.editor, function(data) {
-						data.shiftKey = true;
-						data.ctrlKey = true;
-					});
+					simulateEvent(
+						'keydown',
+						66,
+						editor.editor,
+						function (data) {
+							data.shiftKey = true;
+							data.ctrlKey = true;
+						}
+					);
 
 					expect(editor.value).equals(
 						'<p>test<strong> tes</strong>t test</p>'
@@ -1466,8 +1469,8 @@ describe('Test plugins', function() {
 				});
 			});
 
-			describe('Add ctrl+shift+i to default ctrl+i shortcut for italic command', function() {
-				it('Should work with each of shortcuts', function() {
+			describe('Add ctrl+shift+i to default ctrl+i shortcut for italic command', function () {
+				it('Should work with each of shortcuts', function () {
 					const area = appendTestArea(),
 						editor = new Jodit(area, {
 							commandToHotkeys: {
@@ -1476,50 +1479,52 @@ describe('Test plugins', function() {
 							}
 						});
 
-					editor.value = 'test test test';
-
-					const range = editor.s.createRange(true);
-					range.setStart(editor.editor.firstChild.firstChild, 4);
-					range.setEnd(editor.editor.firstChild.firstChild, 8);
-					editor.s.selectRange(range);
+					editor.value = '<p>test| tes|t test</p>';
+					setCursorToChar(editor);
 
 					// standart ctrl+i
-					simulateEvent('keydown', 'i', editor.editor, function(
-						data
-					) {
-						// data.shiftKey = true;
-						data.ctrlKey = true;
-					});
+					simulateEvent(
+						'keydown',
+						'i',
+						editor.editor,
+						function (data) {
+							// data.shiftKey = true;
+							data.ctrlKey = true;
+						}
+					);
 
 					expect(editor.value).equals(
 						'<p>test<em> tes</em>t test</p>'
 					);
 
-					editor.value = 'test test test';
-
-					const range2 = editor.s.createRange(true);
-					range2.setStart(editor.editor.firstChild.firstChild, 4);
-					range2.setEnd(editor.editor.firstChild.firstChild, 8);
+					editor.value = '<p>test| tes|t test</p>';
+					setCursorToChar(editor);
 
 					// standart ctrl+shift+i
-					simulateEvent('keydown', 'i', editor.editor, function(
-						data
-					) {
-						data.shiftKey = true;
-						data.ctrlKey = true;
-					});
+					simulateEvent(
+						'keydown',
+						'i',
+						editor.editor,
+						function (data) {
+							data.shiftKey = true;
+							data.ctrlKey = true;
+						}
+					);
 
 					expect(editor.value).equals(
 						'<p>test<em> tes</em>t test</p>'
 					);
 
 					// standart ctrl+shift+7
-					simulateEvent('keydown', '7', editor.editor, function(
-						data
-					) {
-						data.shiftKey = true;
-						data.ctrlKey = true;
-					});
+					simulateEvent(
+						'keydown',
+						'7',
+						editor.editor,
+						function (data) {
+							data.shiftKey = true;
+							data.ctrlKey = true;
+						}
+					);
 
 					expect(editor.value.replace('<br>', '')).equals(
 						'<ol><li>test<em> tes</em>t test</li></ol>'
@@ -1529,9 +1534,9 @@ describe('Test plugins', function() {
 		});
 	});
 
-	describe('Sticky plugin', function() {
-		describe('Without scrolling', function() {
-			it('Should not have `jodit_sticky` class and toolbar must be in normal state', function() {
+	describe('Sticky plugin', function () {
+		describe('Without scrolling', function () {
+			it('Should not have `jodit_sticky` class and toolbar must be in normal state', function () {
 				const area = appendTestArea(),
 					editor = new Jodit(area);
 
@@ -1542,9 +1547,9 @@ describe('Test plugins', function() {
 			});
 		});
 
-		describe('Create editor in page with long text', function() {
-			describe('and scroll page to bottom', function() {
-				it('Should add to editor class `jodit_sticky` and toolbar must be always on the top', function() {
+		describe('Create editor in page with long text', function () {
+			describe('and scroll page to bottom', function () {
+				it('Should add to editor class `jodit_sticky` and toolbar must be always on the top', function () {
 					const editor = getJodit();
 
 					editor.value = '<p>stop</p>'.repeat(100);
@@ -1568,8 +1573,8 @@ describe('Test plugins', function() {
 					);
 				});
 
-				describe('On mobile devices - with toolbarDisableStickyForMobile = true', function() {
-					it('Should not add to editor class `jodit_sticky`', function() {
+				describe('On mobile devices - with toolbarDisableStickyForMobile = true', function () {
+					it('Should not add to editor class `jodit_sticky`', function () {
 						getBox().style.width = '370px'; // IPhone 7
 
 						const area = appendTestArea(),
@@ -1595,8 +1600,8 @@ describe('Test plugins', function() {
 					});
 				});
 
-				describe('In iframe mode', function() {
-					it('Should work some way', function() {
+				describe('In iframe mode', function () {
+					it('Should work some way', function () {
 						const editor = getJodit({
 							iframe: true
 						});
@@ -1620,8 +1625,8 @@ describe('Test plugins', function() {
 					});
 				});
 
-				describe('add offset for toolbar', function() {
-					it('Should add offset for sticky toolbar', function() {
+				describe('add offset for toolbar', function () {
+					it('Should add offset for sticky toolbar', function () {
 						const area = appendTestArea(),
 							editor = new Jodit(area, {
 								toolbarStickyOffset: 100
@@ -1646,8 +1651,8 @@ describe('Test plugins', function() {
 					});
 				});
 
-				describe('with toolbarSticky false', function() {
-					it('Should do nothing with toolbar', function() {
+				describe('with toolbarSticky false', function () {
+					it('Should do nothing with toolbar', function () {
 						const area = appendTestArea(),
 							editor = new Jodit(area, {
 								toolbarStickyOffset: 100,
@@ -1677,17 +1682,17 @@ describe('Test plugins', function() {
 				});
 			});
 
-			describe('and scroll page to the top', function() {
-				it('Should remove class `jodit_sticky` from editor and toolbar must have normal position', function() {
+			describe('and scroll page to the top', function () {
+				it('Should remove class `jodit_sticky` from editor and toolbar must have normal position', function () {
 					fillBoxBr(100);
 
 					const area = appendTestArea(),
 						editor = new Jodit(area),
-						brs = [0, 0, 0, 0, 0, 0, 0, 0, 0].map(function() {
+						brs = [0, 0, 0, 0, 0, 0, 0, 0, 0].map(function () {
 							return editor.ownerDocument.createElement('br');
 						});
 
-					brs.forEach(function(br) {
+					brs.forEach(function (br) {
 						editor.container.parentNode.insertBefore(
 							br,
 							editor.container
@@ -1717,7 +1722,7 @@ describe('Test plugins', function() {
 						)
 					);
 
-					brs.forEach(function(br) {
+					brs.forEach(function (br) {
 						br.parentNode.removeChild(br);
 					});
 				});
@@ -1725,9 +1730,9 @@ describe('Test plugins', function() {
 		});
 	});
 
-	describe('Size plugin', function() {
-		describe('In iframe mode after change mode', function() {
-			it('Should set min-height to iframe', function() {
+	describe('Size plugin', function () {
+		describe('In iframe mode after change mode', function () {
+			it('Should set min-height to iframe', function () {
 				const editor = getJodit({
 					iframe: true,
 					minHeight: 300
@@ -1742,8 +1747,8 @@ describe('Test plugins', function() {
 			});
 		});
 
-		describe('Set height', function() {
-			it('Should set container height', function() {
+		describe('Set height', function () {
+			it('Should set container height', function () {
 				const editor = getJodit({
 					height: 222
 				});
@@ -1753,24 +1758,24 @@ describe('Test plugins', function() {
 		});
 	});
 
-	describe('Fullsize plugin', function() {
-		describe('Toggle fullsize', function() {
-			it('Should resize all boxes to first state', function() {
+	describe('Fullsize plugin', function () {
+		describe('Toggle fullsize', function () {
+			it('Should resize all boxes to first state', function () {
 				const editor = getJodit({
 					observer: {
 						timeout: 0
 					}
 				});
 				const chacksizes = ['container', 'workplace', 'editor'];
-				const sizes = chacksizes.map(function(key) {
+				const sizes = chacksizes.map(function (key) {
 						return editor[key].offsetHeight;
 					}),
-					equal = function(a, b) {
+					equal = function (a, b) {
 						return Math.abs(a - b) <= 2;
 					};
 
 				editor.toggleFullSize(true);
-				chacksizes.map(function(key, index) {
+				chacksizes.map(function (key, index) {
 					expect(
 						equal(editor[key].offsetHeight, sizes[index])
 					).is.false;
@@ -1778,7 +1783,7 @@ describe('Test plugins', function() {
 
 				editor.toggleFullSize(false);
 
-				chacksizes.map(function(key, index) {
+				chacksizes.map(function (key, index) {
 					expect(
 						equal(editor[key].offsetHeight, sizes[index])
 					).is.true;
@@ -1787,10 +1792,10 @@ describe('Test plugins', function() {
 		});
 	});
 
-	describe('Path plugin', function() {
-		describe('After init', function() {
-			describe('With showXPathInStatusbar=true', function() {
-				it('Should show status bar', function() {
+	describe('Path plugin', function () {
+		describe('After init', function () {
+			describe('With showXPathInStatusbar=true', function () {
+				it('Should show status bar', function () {
 					const editor = getJodit({
 						language: 'en',
 						showXPathInStatusbar: true,
@@ -1812,7 +1817,7 @@ describe('Test plugins', function() {
 					).equals('flex');
 				});
 
-				it('Should show path to selection element', function() {
+				it('Should show path to selection element', function () {
 					const editor = getJodit({
 						language: 'en',
 						showXPathInStatusbar: true,
@@ -1834,8 +1839,8 @@ describe('Test plugins', function() {
 					expect(statusbar.childNodes[2].textContent).equals('a');
 				});
 
-				describe('After change selection', function() {
-					it('Should change path to selection element', function() {
+				describe('After change selection', function () {
+					it('Should change path to selection element', function () {
 						const editor = getJodit({
 							language: 'en',
 							showXPathInStatusbar: true,
@@ -1869,8 +1874,8 @@ describe('Test plugins', function() {
 					});
 				});
 
-				describe('After click on element of path', function() {
-					it('Should select this element', function() {
+				describe('After click on element of path', function () {
+					it('Should select this element', function () {
 						const editor = getJodit({
 							language: 'en',
 							showXPathInStatusbar: true,
@@ -1916,8 +1921,8 @@ describe('Test plugins', function() {
 					});
 				});
 
-				describe('Context menu on element of path', function() {
-					it('Should open context menu', function() {
+				describe('Context menu on element of path', function () {
+					it('Should open context menu', function () {
 						const editor = getJodit({
 							language: 'en',
 							showXPathInStatusbar: true,
@@ -1943,7 +1948,7 @@ describe('Test plugins', function() {
 						const elm = statusbar.childNodes[2].querySelector('a'),
 							pos = Jodit.modules.Helpers.position(elm);
 
-						simulateEvent('contextmenu', 0, elm, function(o) {
+						simulateEvent('contextmenu', 0, elm, function (o) {
 							Object.assign(o, {
 								clientX: pos.left + 10,
 								clientY: pos.top + 10
@@ -1973,12 +1978,12 @@ describe('Test plugins', function() {
 		});
 	});
 
-	describe('Paste storage', function() {
-		describe('Empty list', function() {
-			it('Sholud not show dialog', function() {
+	describe('Paste storage', function () {
+		describe('Empty list', function () {
+			it('Sholud not show dialog', function () {
 				const editor = getJodit();
 
-				simulateEvent('keydown', 'v', editor.editor, function(data) {
+				simulateEvent('keydown', 'v', editor.editor, function (data) {
 					data.ctrlKey = true;
 					data.shiftKey = true;
 				});
@@ -1988,8 +1993,8 @@ describe('Test plugins', function() {
 			});
 		});
 
-		describe('After copy elements', function() {
-			it('Sholud show dialog with pasted list', function() {
+		describe('After copy elements', function () {
+			it('Sholud show dialog with pasted list', function () {
 				const editor = getJodit({
 					observer: {
 						timeout: 0
@@ -2004,11 +2009,11 @@ describe('Test plugins', function() {
 				range.setEnd(editor.editor.firstChild, 1);
 				editor.s.selectRange(range);
 
-				simulateEvent('copy', 0, editor.editor, function(data) {
+				simulateEvent('copy', 0, editor.editor, function (data) {
 					Object.defineProperty(data, 'clipboardData', {
 						value: {
-							getData: function() {},
-							setData: function() {}
+							getData: function () {},
+							setData: function () {}
 						}
 					});
 				});
@@ -2017,16 +2022,16 @@ describe('Test plugins', function() {
 				range.setEnd(editor.editor.firstChild.firstChild, 2);
 				editor.s.selectRange(range);
 
-				simulateEvent('copy', 0, editor.editor, function(data) {
+				simulateEvent('copy', 0, editor.editor, function (data) {
 					Object.defineProperty(data, 'clipboardData', {
 						value: {
-							getData: function() {},
-							setData: function() {}
+							getData: function () {},
+							setData: function () {}
 						}
 					});
 				});
 
-				simulateEvent('keydown', 'v', editor.editor, function(data) {
+				simulateEvent('keydown', 'v', editor.editor, function (data) {
 					data.ctrlKey = true;
 					data.shiftKey = true;
 				});
@@ -2035,8 +2040,8 @@ describe('Test plugins', function() {
 				expect(dialog).is.not.null;
 			});
 
-			describe('After click on some of elements', function() {
-				it('Sholud select this', function() {
+			describe('After click on some of elements', function () {
+				it('Sholud select this', function () {
 					const editor = getJodit();
 
 					editor.value = 'abcde';
@@ -2046,11 +2051,11 @@ describe('Test plugins', function() {
 					range.setEnd(editor.editor.firstChild.firstChild, 1);
 					editor.s.selectRange(range);
 
-					simulateEvent('copy', 0, editor.editor, function(data) {
+					simulateEvent('copy', 0, editor.editor, function (data) {
 						Object.defineProperty(data, 'clipboardData', {
 							value: {
-								getData: function() {},
-								setData: function() {}
+								getData: function () {},
+								setData: function () {}
 							}
 						});
 					});
@@ -2059,21 +2064,24 @@ describe('Test plugins', function() {
 					range.setEnd(editor.editor.firstChild.firstChild, 2);
 					editor.s.selectRange(range);
 
-					simulateEvent('copy', 0, editor.editor, function(data) {
+					simulateEvent('copy', 0, editor.editor, function (data) {
 						Object.defineProperty(data, 'clipboardData', {
 							value: {
-								getData: function() {},
-								setData: function() {}
+								getData: function () {},
+								setData: function () {}
 							}
 						});
 					});
 
-					simulateEvent('keydown', 'v', editor.editor, function(
-						data
-					) {
-						data.ctrlKey = true;
-						data.shiftKey = true;
-					});
+					simulateEvent(
+						'keydown',
+						'v',
+						editor.editor,
+						function (data) {
+							data.ctrlKey = true;
+							data.shiftKey = true;
+						}
+					);
 
 					const dialog = getOpenedDialog(editor);
 					expect(dialog).is.not.null;
@@ -2102,8 +2110,8 @@ describe('Test plugins', function() {
 				});
 			});
 
-			describe('Press key up/down/enter', function() {
-				it('Sholud select next/previos element of list and insert selected value after Enter', function() {
+			describe('Press key up/down/enter', function () {
+				it('Sholud select next/previos element of list and insert selected value after Enter', function () {
 					const editor = getJodit();
 
 					editor.value = 'abcde';
@@ -2113,11 +2121,11 @@ describe('Test plugins', function() {
 					range.setEnd(editor.editor.firstChild.firstChild, 1);
 					editor.s.selectRange(range);
 
-					simulateEvent('copy', 0, editor.editor, function(data) {
+					simulateEvent('copy', 0, editor.editor, function (data) {
 						Object.defineProperty(data, 'clipboardData', {
 							value: {
-								getData: function() {},
-								setData: function() {}
+								getData: function () {},
+								setData: function () {}
 							}
 						});
 					});
@@ -2126,21 +2134,24 @@ describe('Test plugins', function() {
 					range.setEnd(editor.editor.firstChild.firstChild, 2);
 					editor.s.selectRange(range);
 
-					simulateEvent('copy', 0, editor.editor, function(data) {
+					simulateEvent('copy', 0, editor.editor, function (data) {
 						Object.defineProperty(data, 'clipboardData', {
 							value: {
-								getData: function() {},
-								setData: function() {}
+								getData: function () {},
+								setData: function () {}
 							}
 						});
 					});
 
-					simulateEvent('keydown', 'v', editor.editor, function(
-						data
-					) {
-						data.ctrlKey = true;
-						data.shiftKey = true;
-					});
+					simulateEvent(
+						'keydown',
+						'v',
+						editor.editor,
+						function (data) {
+							data.ctrlKey = true;
+							data.shiftKey = true;
+						}
+					);
 
 					const dialog = getOpenedDialog(editor);
 					expect(dialog).is.not.null;

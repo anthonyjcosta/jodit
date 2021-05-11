@@ -1,18 +1,19 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
+import type { FileBrowser } from '../file-browser';
 import { Dialog } from '../../dialog';
+
 import { Dom } from '../../../core/dom';
 import { F_CLASS, ICON_LOADER, ITEM_CLASS } from '../consts';
-
 import { attr, error } from '../../../core/helpers';
 import { makeContextMenu } from '../factories';
 import { Icon } from '../../../core/ui';
-import { IFileBrowser } from '../../../types';
 import { getItem } from '../listeners/native-listeners';
+import { openImageEditor } from '../../image-editor/image-editor';
 
 const CLASS_PREVIEW = F_CLASS + '_preview_',
 	preview_tpl_next = (next = 'next', right = 'right') =>
@@ -21,7 +22,7 @@ const CLASS_PREVIEW = F_CLASS + '_preview_',
 		Icon.get('angle-' + right) +
 		'</a>';
 
-export default (self: IFileBrowser) => {
+export default (self: FileBrowser) => {
 	if (!self.o.contextMenu) {
 		return () => {};
 	}
@@ -50,7 +51,8 @@ export default (self: IFileBrowser) => {
 							icon: 'pencil',
 							title: 'Edit',
 							exec: () => {
-								return self.openImageEditor(
+								return openImageEditor.call(
+									self,
 									ga('href'),
 									ga('data-name'),
 									ga('data-path'),
@@ -87,7 +89,7 @@ export default (self: IFileBrowser) => {
 
 								self.state.activeElements = [];
 
-								await self.loadTree();
+								return self.loadTree();
 							}
 					  }
 					: false,
@@ -171,36 +173,39 @@ export default (self: IFileBrowser) => {
 										}
 									};
 
-								self.e.on([next, prev], 'click', function (
-									this: HTMLElement
-								) {
-									if (
-										this.classList.contains(
-											CLASS_PREVIEW + 'navigation-next'
-										)
-									) {
-										item = Dom.nextWithClass(
-											item,
-											ITEM_CLASS
-										) as HTMLElement;
-									} else {
-										item = Dom.prevWithClass(
-											item,
-											ITEM_CLASS
-										) as HTMLElement;
+								self.e.on(
+									[next, prev],
+									'click',
+									function (this: HTMLElement) {
+										if (
+											this.classList.contains(
+												CLASS_PREVIEW +
+													'navigation-next'
+											)
+										) {
+											item = Dom.nextWithClass(
+												item,
+												ITEM_CLASS
+											) as HTMLElement;
+										} else {
+											item = Dom.prevWithClass(
+												item,
+												ITEM_CLASS
+											) as HTMLElement;
+										}
+
+										if (!item) {
+											throw error('Need element');
+										}
+
+										Dom.detach(temp_content);
+										Dom.detach(preview_box);
+
+										temp_content.innerHTML = ICON_LOADER;
+
+										addLoadHandler(ga('href'));
 									}
-
-									if (!item) {
-										throw error('Need element');
-									}
-
-									Dom.detach(temp_content);
-									Dom.detach(preview_box);
-
-									temp_content.innerHTML = ICON_LOADER;
-
-									addLoadHandler(ga('href'));
-								});
+								);
 
 								self.e.on('beforeDestruct', () => {
 									preview.destruct();

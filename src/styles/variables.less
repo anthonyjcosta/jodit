@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 // screen
@@ -48,13 +48,14 @@
 	--color-resizer: #c8c8c8;
 
 	--color-background-default: var(--color-white);
-	--color-background-gray: rvar(--color-gray);
+	--color-background-gray: var(--color-gray);
 	--color-background-gray-hover: #f8f8f8;
 	--color-background-hover: #7a450f;
 	--color-background-button-hover: #ecebe9;
 	--color-background-button-hover-opacity30: rgba(236, 235, 233, 0.3);
 	--color-background-progress: #b91f1f;
 	--color-background-filebrowser-folders: #3f3f3f;
+	--color-background-active: #2196f3;
 	--color-background-selection: @color-background-selection;
 	--color-background-selection_opacity50: rgba(181, 214, 253, 0.5);
 
@@ -91,7 +92,9 @@
 
 	// dark theme
 	--dark_background_color: #575757;
+	--dark-text-color: var(--color-white);
 	--dark_background_ligher: #787878;
+	--dark_background_darknes: #353535;
 	--dark_border_color: #444;
 	--dark_text_color: #d1cccc;
 	--dark_text_color_opacity80: rgba(209, 204, 204, 0.8);
@@ -106,11 +109,14 @@
 
 	--width-default: 180px;
 	--width-input-min: var(--width-default);
+	--input-height: 32px;
 
 	--button-icon-size: @icon-middle-size;
 	--margin-v: 2px;
+	--button-df-size: calc((var(--button-icon-size) - 4px) * 2);
 	--button-size: calc(
-		var(--button-icon-size) + (var(--button-icon-size) - 4px) * 2 +
-			var(--margin-v) * 2
+		var(--button-icon-size) + var(--button-df-size) + var(--margin-v) * 2
 	);
+
+	--focus-input-box-shadow: 0 0 0 0.05rem rgba(0, 123, 255, 0.25);
 }

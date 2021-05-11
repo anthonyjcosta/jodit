@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 describe('Jodit Events system Tests', function () {
 	describe('Native Events', function () {
@@ -23,6 +23,7 @@ describe('Jodit Events system Tests', function () {
 
 			div.parentNode.removeChild(div);
 		});
+
 		it('Create simple event handler on some DOM element on few events', function () {
 			const editor = getJodit(),
 				div = document.createElement('button');
@@ -104,6 +105,7 @@ describe('Jodit Events system Tests', function () {
 				div.parentNode.removeChild(div);
 			});
 		});
+
 		it('Add event handler for several elements', function () {
 			const editor = getJodit(),
 				div1 = editor.ed.createElement('button'),
@@ -211,12 +213,30 @@ describe('Jodit Events system Tests', function () {
 			let enable = false;
 			const editor = getJodit();
 
-			editor.events.on('keydown', function (event) {
+			editor.events.on('keydown', function () {
 				enable = true;
 			});
 
 			simulateEvent('keydown', Jodit.KEY_ENTER, editor.editor);
 			expect(enable).is.true;
+		});
+
+		describe('one', function () {
+			it('should call handler only one time', function () {
+				let count = 0;
+				const editor = getJodit();
+
+				editor.events.one('keydown', function () {
+					count++;
+				});
+
+				simulateEvent('keydown', Jodit.KEY_ENTER, editor.editor);
+				simulateEvent('keydown', Jodit.KEY_ENTER, editor.editor);
+				simulateEvent('keydown', Jodit.KEY_ENTER, editor.editor);
+				simulateEvent('keydown', Jodit.KEY_ENTER, editor.editor);
+
+				expect(count).equals(1);
+			});
 		});
 
 		it('Delete event handler', function () {
@@ -239,7 +259,7 @@ describe('Jodit Events system Tests', function () {
 
 			let work = false;
 
-			editor.events.on('keydown', function (event) {
+			editor.events.on('keydown', function () {
 				work = true;
 			});
 
@@ -1203,11 +1223,13 @@ describe('Jodit Events system Tests', function () {
 								counter.push('onSome.place');
 							}
 						}
-					})
+					});
 
 					editor.e.fire('onSome');
 
-					expect(counter.join('|')).equals('afterInit|afterAddPlace|onSome|onSome.place');
+					expect(counter.join('|')).equals(
+						'afterInit|afterAddPlace|onSome|onSome.place'
+					);
 				});
 			});
 		});

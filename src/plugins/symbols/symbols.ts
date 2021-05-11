@@ -1,12 +1,14 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import './symbols.less';
+
 import './config';
 
+import type { IJodit } from '../../types';
 import {
 	KEY_DOWN,
 	KEY_ENTER,
@@ -14,7 +16,6 @@ import {
 	KEY_RIGHT,
 	KEY_UP
 } from '../../core/constants';
-import { IJodit } from '../../types';
 import { Dom, Plugin } from '../../modules';
 import { attr } from '../../core/helpers/utils';
 
@@ -22,9 +23,17 @@ import { attr } from '../../core/helpers/utils';
  * The plugin inserts characters that are not part of the standard keyboard.
  */
 export class symbols extends Plugin {
+	/** @override */
+	buttons: Plugin['buttons'] = [
+		{
+			name: 'symbol',
+			group: 'insert'
+		}
+	];
+
 	private countInRow: number = 17;
 
-	/** @overdide */
+	/** @override */
 	afterInit(jodit: IJodit): void {
 		jodit.e.on('generateSpecialCharactersTable.symbols', () => {
 			const container = jodit.c.fromHTML(
@@ -73,18 +82,19 @@ export class symbols extends Plugin {
 				.on(chars, 'focus', function (this: HTMLAnchorElement) {
 					preview.innerHTML = this.innerHTML;
 				})
-				.on(chars, 'mousedown', function (
-					this: HTMLAnchorElement,
-					e?: MouseEvent
-				) {
-					if (Dom.isTag(this, 'a')) {
-						jodit.s.focus();
-						jodit.s.insertHTML(this.innerHTML);
-						jodit.e.fire(this, 'close_dialog');
-						e && e.preventDefault();
-						e && e.stopImmediatePropagation();
+				.on(
+					chars,
+					'mousedown',
+					function (this: HTMLAnchorElement, e?: MouseEvent) {
+						if (Dom.isTag(this, 'a')) {
+							jodit.s.focus();
+							jodit.s.insertHTML(this.innerHTML);
+							jodit.e.fire(this, 'close_dialog');
+							e && e.preventDefault();
+							e && e.stopImmediatePropagation();
+						}
 					}
-				})
+				)
 				.on(chars, 'mouseenter', function (this: HTMLAnchorElement) {
 					if (Dom.isTag(this, 'a')) {
 						this.focus();
@@ -159,6 +169,7 @@ export class symbols extends Plugin {
 		});
 	}
 
+	/** @override */
 	protected beforeDestruct(jodit: IJodit) {
 		jodit.e.off('generateSpecialCharactersTable.symbols');
 	}

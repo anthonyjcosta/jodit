@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import { INVISIBLE_SPACE_REG_EXP } from '../../constants';
@@ -12,9 +12,9 @@ export const normalizeNode = (node: Node | null): void => {
 		return;
 	}
 
-	if (Dom.isText(node) && node.nodeValue !== null && node.parentNode) {
+	if (Dom.isText(node) && node.nodeValue != null && node.parentNode) {
 		while (Dom.isText(node.nextSibling)) {
-			if (node.nextSibling.nodeValue !== null) {
+			if (node.nextSibling.nodeValue != null) {
 				node.nodeValue += node.nextSibling.nodeValue;
 			}
 

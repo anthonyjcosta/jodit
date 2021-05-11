@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 export * from '../core/events';
@@ -25,6 +25,7 @@ export {
 	UITextArea,
 	UICheckbox,
 	UIBlock,
+	ProgressBar,
 	Icon
 } from '../core/ui';
 export { View } from '../core/view/view';
@@ -34,7 +35,6 @@ import * as Helpers from '../core/helpers/';
 export { Helpers };
 export { ImageEditor } from './image-editor/image-editor';
 export { Observer } from './observer/observer';
-export { ProgressBar } from './progress-bar/progress-bar';
 export { Select, Style } from '../core/selection';
 export { Snapshot } from './observer/snapshot';
 export { StatusBar } from './status-bar/status-bar';

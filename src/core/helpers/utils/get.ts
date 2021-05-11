@@ -1,11 +1,12 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { IDictionary, Nullable } from '../../../types';
-import { isString, isVoid } from '../checker';
+import type { IDictionary, Nullable } from '../../../types';
+import { isString } from '../checker/is-string';
+import { isVoid } from '../checker/is-void';
 
 /**
  * Safe access in tree object
@@ -22,8 +23,8 @@ import { isString, isVoid } from '../checker';
  *   }
  * };
  *
- * console.log(Jodit.modules.Helpers.get('a.b.c.d.e') === false);
- * console.log(Jodit.modules.Helpers.get('a.b.a.d.e') === null);
+ * console.log(Jodit.modules.Helpers.get('a.b.c.d.e', obj) === false); // true
+ * console.log(Jodit.modules.Helpers.get('a.b.a.d.e', obj) === null); // false
  * ```
  * @param chain
  * @param obj

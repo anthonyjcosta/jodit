@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 describe('Test helpers', function () {
 	describe('Normalizers', function () {
@@ -68,9 +68,61 @@ describe('Test helpers', function () {
 					[false, false]
 				];
 
-				for (let i = 0, value = values[i]; i < values.length; i += 1) {
+				for (let i = 0; i < values.length; i += 1) {
+					const value = values[i];
 					expect(value[1]).equals(
 						Jodit.modules.Helpers.isVoid(value[0])
+					);
+				}
+			});
+		});
+
+		describe('isURL', function () {
+			it('Should check value is URL', function () {
+				const variants = {
+					'12345678901234567890123': 0,
+					'http://j.mp': 1,
+					'http://xdan.ru': 1,
+					' http://xdan.ru ': 0,
+					'https://xdan.ru test': 0,
+					'https://xdan.ru?query=1': 1,
+					'https://xdan.ru?query': 1,
+					'https://xdan.ru:2333?query': 1,
+					'http://www.example.com/wpstyle/?p=364': 1,
+					'http://userid:password@example.com/': 1,
+					'http://userid@example.com:8080/': 1,
+					'http://⌘.ws': 1,
+					'https://томаты.рф': 1,
+					'http://foo.com/blah_(wikipedia)#cite-1': 1,
+					'http://foo.bar/?q=Test%20URL-encoded%20stuff': 1,
+					'http://a.b-c.de': 1,
+					'http://': 0,
+					'http://..': 1,
+					'http://../': 1,
+					'http://##/': 0,
+					'http:///a': 1,
+					'//xdan.ru?query': 0,
+					'//xdan.ru': 0,
+					'ftp://xdan.ru': 1,
+					'file://xdan.ru': 1,
+					'http://142.42.1.1/': 1,
+					'http://142.42.1.1:8080/': 1,
+					'httpss://xdan.ru': 0,
+					'http://www.google.com/url?sa=i&rct=j&q=&esrc=s&source=images&cd=&docid=nIv5rk2GyP3hXM&tbnid=isiOkMe3nCtexM:&ved=0CAUQjRw&url=http%3A%2F%2Fanimalcrossing.wikia.com%2Fwiki%2FLion&ei=ygZXU_2fGKbMsQTf4YLgAQ&bvm=bv.65177938,d.aWc&psig=AFQjCNEpBfKnal9kU7Zu4n7RnEt2nerN4g&ust=1398298682009707': 1,
+					'https://demosite.sharepoint.com/:v:/s/PCGKR005/ESMdCz-_rXtIrwSlDVW2mw0BQ8p9J1qtraaCe4VkVPsn_w?e=gEQORV': 1,
+					'https://demo.sharepoint.com/:v:/s/PCGKR005/ESMdCz-_rXtIrwSlDVW2mw0BQ8p9J1qtraaCe4VkVPsn_w?e=gEQORV': 1,
+					'/index.php': 0
+				};
+
+				const values = Object.keys(variants);
+
+				for (let i = 0; i < values.length; i += 1) {
+					const key = values[i],
+						result = Boolean(variants[key]);
+
+					expect(result).equals(
+						Jodit.modules.Helpers.isURL(key),
+						`Is domain "${key}"`
 					);
 				}
 			});
@@ -194,9 +246,11 @@ describe('Test helpers', function () {
 						'About Jodit',
 						'حول جوديت',
 						'ar',
+
 						'about Jodit',
 						'حول جوديت',
 						'ar',
+
 						'British people',
 						'British people',
 						'ar'
@@ -404,10 +458,103 @@ describe('Test helpers', function () {
 					['a.b1.0.key1', null]
 				];
 
-				for (let i = 0, value = values[i]; i < values.length; i += 1) {
+				for (let i = 0; i < values.length; i += 1) {
+					const value = values[i];
 					expect(value[1]).equals(
-						Jodit.modules.Helpers.get(value[0])
+						Jodit.modules.Helpers.get(value[0], obj)
 					);
+				}
+			});
+		});
+
+		describe('set', function () {
+			it('Should set value by keyChain', function () {
+				let obj = {};
+
+				const values = [
+					['', null, {}],
+					[undefined, null, {}],
+					[null, null, {}],
+					['a1', 2, { a1: 2 }],
+					['a', 1, { a1: 2, a: 1 }],
+					['a2', null, { a1: 2, a: 1, a2: null }],
+					[
+						'a.b.c.d.e',
+						1,
+						{
+							a1: 2,
+							a: {
+								b: {
+									c: {
+										d: {
+											e: 1
+										}
+									}
+								}
+							},
+							a2: null
+						}
+					],
+					[
+						'a.b.c.d.e',
+						1,
+						{
+							a1: 2,
+							a: {
+								b: {
+									c: {
+										d: {
+											e: 1
+										}
+									}
+								}
+							},
+							a2: null
+						}
+					],
+					[
+						'a.b.c.e',
+						false,
+						{
+							a1: 2,
+							a: {
+								b: {
+									c: {
+										e: false,
+										d: {
+											e: 1
+										}
+									}
+								}
+							},
+							a2: null
+						}
+					],
+					[
+						'a.b1.0.key',
+						5,
+						{
+							a1: 2,
+							a: {
+								b1: [{ key: 5 }],
+								b: {
+									c: {
+										e: false,
+										d: {
+											e: 1
+										}
+									}
+								}
+							},
+							a2: null
+						}
+					]
+				];
+
+				for (let i = 0; i < values.length; i += 1) {
+					const value = values[i];
+					Jodit.modules.Helpers.set(value[0], value[1], obj);
+					expect(obj).deep.eq(value[2]);
 				}
 			});
 		});
@@ -444,6 +591,7 @@ describe('Test helpers', function () {
 				).is.true;
 			});
 		});
+
 		describe('getClassName', function () {
 			const getClassName = Jodit.modules.Helpers.getClassName;
 
@@ -457,9 +605,166 @@ describe('Test helpers', function () {
 				expect(
 					getClassName(Jodit.modules.ToolbarButton.prototype)
 				).equals('ToolbarButton');
-				expect(getClassName(Jodit.modules.Component.prototype)).equals(
-					'Component'
-				);
+			});
+		});
+	});
+
+	describe('Config prototype', function () {
+		const ConfigProto = Jodit.modules.Helpers.ConfigProto;
+
+		it('Should use object B as prototype for A', function () {
+			const A = {
+				a: 1,
+
+				e: {
+					f: {
+						g: 5
+					}
+				}
+			};
+			const B = {
+				a: 2,
+				b: 3,
+				e: {
+					f: {
+						g: 6,
+						h: 7
+					}
+				}
+			};
+
+			const C = ConfigProto(A, B);
+
+			expect(C).does.not.eq(A);
+			expect(C.a).eq(1);
+			expect(C.b).eq(3);
+			expect(C.e.f.g).eq(5);
+			expect(C.e.f.h).eq(7);
+
+			B.e.f.h = 9;
+			expect(C.e.f.h).eq(9);
+		});
+
+		describe('Several prototypes', function () {
+			it('Should use all objects as prototype for A', function () {
+				const A = {
+					a: 1,
+
+					e: {
+						f: {
+							g: 5
+						}
+					}
+				};
+
+				const B = {
+					a: 2,
+					b: 3,
+					e: {
+						f: {
+							g: 6,
+							k: 90
+						}
+					}
+				};
+
+				const C = {
+					e: {
+						f: {
+							h: 7
+						}
+					}
+				};
+
+				const D = ConfigProto(A, ConfigProto(B, C));
+
+				expect(D).does.not.eq(A);
+				expect(D.a).eq(1);
+				expect(D.b).eq(3);
+				expect(D.e.f.g).eq(5);
+				expect(D.e.f.h).eq(7);
+				expect(D.e.f.k).eq(90);
+
+				C.e.f.h = 9;
+				expect(D.e.f.h).eq(9);
+			});
+		});
+
+		describe('Atom values', function () {
+			it('Should not merge', function () {
+				const A = {
+					a: Jodit.atom({
+						b: {
+							c: 1
+						}
+					})
+				};
+
+				const B = {
+					a: {
+						b: {
+							c: 1,
+							e: 5
+						}
+					}
+				};
+
+				const res = ConfigProto(A, B);
+
+				expect(res.a.b.c).eq(1);
+				expect(res.a.b.e).eq(undefined);
+			});
+		});
+
+		describe('Arrays', function () {
+			it('Should merge - not concat', function () {
+				const A = {
+					a: {
+						b: [1, 2, 3, 4]
+					}
+				};
+
+				const B = {
+					a: {
+						b: [5, 6, 7, 8, 9]
+					}
+				};
+
+				const res = ConfigProto(A, B);
+
+				expect(res.a.b).deep.eq([1, 2, 3, 4, 9]);
+			});
+
+			describe('Atom array', function () {
+				it('Should be not merged', function () {
+					const A = {
+						a: { b: Jodit.atom([1, 2, 3, 4]) }
+					};
+
+					const B = {
+						a: { b: [5, 6, 7, 8, 9] }
+					};
+
+					const res = ConfigProto(A, B);
+
+					expect(res.a.b).deep.eq([1, 2, 3, 4]);
+				});
+
+				describe('On first level all arrays', function () {
+					it('Should work as atomic', function () {
+						const A = {
+							a: [1, 2, 3, 4]
+						};
+
+						const B = {
+							a: [5, 6, 7, 8, 9]
+						};
+
+						const res = ConfigProto(A, B);
+
+						expect(res.a).deep.eq([1, 2, 3, 4]);
+					});
+				});
 			});
 		});
 	});

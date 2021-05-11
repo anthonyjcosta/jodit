@@ -1,21 +1,23 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import autobind from 'autobind-decorator';
-
+import type { IBound, IJodit, Nullable } from '../../types';
 import { Plugin } from '../../core/plugin';
-import { IBound, IJodit, Nullable } from '../../types';
 import { Dom, Table } from '../../modules';
-import { $$, dataBind, position } from '../../core/helpers';
+import { $$, position } from '../../core/helpers';
 import { alignElement } from '../justify';
 import { KEY_TAB } from '../../core/constants';
+import { autobind, watch } from '../../core/decorators';
 
 const key = 'table_processor_observer';
 
 export class selectCells extends Plugin {
+	/** @override */
+	requires = ['select'];
+
 	/**
 	 * Shortcut for Table module
 	 */
@@ -23,13 +25,13 @@ export class selectCells extends Plugin {
 		return this.j.getInstance<Table>('Table', this.j.o);
 	}
 
+	/** @override */
 	protected afterInit(jodit: IJodit): void {
 		if (!jodit.o.table.allowCellSelection) {
 			return;
 		}
 
 		jodit.e
-			.on(this.j.ow, 'click.select-cells', this.onRemoveSelection)
 			.on('keydown.select-cells', (event: KeyboardEvent) => {
 				if (event.key === KEY_TAB) {
 					this.unselectCells();
@@ -40,14 +42,24 @@ export class selectCells extends Plugin {
 			.on('afterCommand.select-cells', this.onAfterCommand)
 
 			.on(
-				'change afterCommand afterSetMode click afterInit'
-					.split(' ')
+				[
+					'clickEditor',
+					'mousedownTd',
+					'mousedownTh',
+					'touchstartTd',
+					'touchstartTh'
+				]
 					.map(e => e + '.select-cells')
 					.join(' '),
-				() => {
-					$$('table', jodit.editor).forEach(this.observe);
+				this.onStartSelection
+			)
+			// For `clickEditor` correct working. Because `mousedown` on first cell
+			// and mouseup on another cell call `click` only for `TR` element.
+			.on('clickTr', (): void | false => {
+				if (this.module.getAllSelectedCells().length) {
+					return false;
 				}
-			);
+			});
 	}
 
 	/**
@@ -55,43 +67,29 @@ export class selectCells extends Plugin {
 	 */
 	private selectedCell: Nullable<HTMLTableCellElement> = null;
 
-	/***
-	 * Add listeners for table
-	 * @param table
-	 */
-	@autobind
-	private observe(table: HTMLTableElement): void {
-		if (dataBind(table, key)) {
-			return;
-		}
-
-		this.onRemoveSelection();
-
-		dataBind(table, key, true);
-
-		this.j.e.on(
-			table,
-			'mousedown.select-cells touchstart.select-cells',
-			this.onStartSelection.bind(this, table)
-		);
-	}
-
 	/**
 	 * Mouse click inside the table
-	 *
-	 * @param table
-	 * @param e
+	 * @param cell
 	 */
-	private onStartSelection(table: HTMLTableElement, e: MouseEvent): void {
+	@autobind
+	protected onStartSelection(cell: HTMLTableCellElement): void | false {
 		if (this.j.o.readonly) {
 			return;
 		}
 
 		this.unselectCells();
 
-		const cell = Dom.closest(e.target as HTMLElement, ['td', 'th'], table);
+		if (cell === this.j.editor) {
+			return;
+		}
 
-		if (!cell) {
+		const table = Dom.closest(
+			cell,
+			'table',
+			this.j.editor
+		) as HTMLTableElement;
+
+		if (!cell || !table) {
 			return;
 		}
 
@@ -115,12 +113,12 @@ export class selectCells extends Plugin {
 				this.onStopSelection.bind(this, table)
 			);
 
-		this.j.e.fire(
-			'showPopup',
-			table,
-			(): IBound => position(cell, this.j),
-			'cells'
-		);
+		return false;
+	}
+
+	@watch(':outsideClick')
+	protected onOutsideClick(e: MouseEvent): void {
+		this.unselectCells();
 	}
 
 	/**
@@ -300,7 +298,7 @@ export class selectCells extends Plugin {
 			const cells = this.module.getAllSelectedCells();
 
 			if (cells.length) {
-				const cell = cells.shift();
+				const [cell] = cells;
 
 				if (!cell) {
 					return;
@@ -326,7 +324,7 @@ export class selectCells extends Plugin {
 						break;
 
 					case 'empty':
-						cells.forEach(td => (td.innerHTML = ''));
+						cells.forEach(td => Dom.detach(td));
 						break;
 
 					case 'bin':
@@ -365,6 +363,7 @@ export class selectCells extends Plugin {
 						break;
 				}
 			}
+
 			return false;
 		}
 	}

@@ -1,15 +1,15 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import './size.less';
-import autobind from 'autobind-decorator';
 
+import type { IJodit } from '../../types';
 import { css, isNumber } from '../../core/helpers';
-import { IJodit } from '../../types';
 import { Plugin } from '../../core/plugin';
+import { autobind } from '../../core/decorators';
 
 /**
  * Calculate sizes for editor workspace and handle setHeight and setWidth events

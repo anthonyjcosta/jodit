@@ -1,15 +1,16 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import './resizer.less';
 
+import type { HTMLTagNames, IBound, Nullable } from '../../types';
+import type { IJodit } from '../../types';
 import { Config } from '../../config';
 import * as consts from '../../core/constants';
 import { IS_IE } from '../../core/constants';
-import { IBound } from '../../types';
 import { Dom } from '../../core/dom';
 import {
 	$$,
@@ -19,10 +20,9 @@ import {
 	innerWidth,
 	markOwner
 } from '../../core/helpers';
-import { IJodit } from '../../types';
 import { Plugin } from '../../core/plugin';
-import autobind from 'autobind-decorator';
 import { eventEmitter } from '../../core/global';
+import { autobind, debounce, watch } from '../../core/decorators';
 
 /**
  * The module creates a supporting frame for resizing of the elements img and table
@@ -34,9 +34,7 @@ import { eventEmitter } from '../../core/global';
  */
 declare module '../../config' {
 	interface Config {
-		useIframeResizer: boolean;
-		useTableResizer: boolean;
-		useImageResizer: boolean;
+		allowResizeTags: HTMLTagNames[];
 
 		resizer: {
 			showSize: boolean;
@@ -46,17 +44,8 @@ declare module '../../config' {
 		};
 	}
 }
-Config.prototype.useIframeResizer = true;
 
-/**
- * @property{boolean} useTableResizer=true Use true frame for editing table size
- */
-Config.prototype.useTableResizer = true;
-
-/**
- * @property{boolean} useImageResizer=true Use true image editing frame size
- */
-Config.prototype.useImageResizer = true;
+Config.prototype.allowResizeTags = ['img', 'iframe', 'table', 'jodit'];
 
 /**
  * @property {object} resizer
@@ -105,6 +94,7 @@ export class resizer extends Plugin {
 		'span'
 	)[0];
 
+	/** @override */
 	protected afterInit(editor: IJodit): void {
 		$$('i', this.rect).forEach((resizeHandle: HTMLElement) => {
 			editor.e.on(
@@ -126,7 +116,7 @@ export class resizer extends Plugin {
 			.on(
 				'afterGetValueFromEditor.resizer',
 				(data: { value: string }) => {
-					const rgx = /<jodit[^>]+data-jodit_iframe_wrapper[^>]+>(.*?<iframe[^>]+>[\s\n\r]*<\/iframe>.*?)<\/jodit>/gi;
+					const rgx = /<jodit[^>]+data-jodit_iframe_wrapper[^>]+>(.*?<iframe[^>]+>.*?<\/iframe>.*?)<\/jodit>/gi;
 
 					if (rgx.test(data.value)) {
 						data.value = data.value.replace(rgx, '$1');
@@ -134,16 +124,35 @@ export class resizer extends Plugin {
 				}
 			)
 			.on('hideResizer', this.hide)
-			.on(
-				'change afterInit afterSetMode',
-				editor.async.debounce(
-					this.onChangeEditor.bind(this),
-					editor.defaultTimeout
-				)
-			);
+			.on('change afterInit afterSetMode', this.onChangeEditor);
 
 		this.addEventListeners();
 		this.onChangeEditor();
+	}
+
+	/**
+	 * Click in the editor area
+	 * @param e
+	 * @protected
+	 */
+	@watch(':click')
+	protected onEditorClick(e: MouseEvent): void {
+		let node = e.target as Nullable<Node>;
+
+		const {
+			editor,
+			options: { allowResizeTags }
+		} = this.j;
+
+		while (node && node !== editor) {
+			if (Dom.isTag(node, allowResizeTags)) {
+				this.bind(node);
+				this.onClickElement(node, e);
+				return;
+			}
+
+			node = node.parentNode;
+		}
 	}
 
 	private addEventListeners() {
@@ -303,9 +312,8 @@ export class resizer extends Plugin {
 		}
 	}
 
+	@debounce()
 	private onChangeEditor() {
-		const editor = this.j;
-
 		if (this.isShown) {
 			if (!this.element || !this.element.parentNode) {
 				this.hide();
@@ -314,35 +322,20 @@ export class resizer extends Plugin {
 			}
 		}
 
-		if (!editor.isDestructed) {
-			$$('img, table, iframe', editor.editor).forEach(
-				(elm: HTMLElement) => {
-					if (editor.getMode() === consts.MODE_SOURCE) {
-						return;
-					}
-
-					if (
-						!(elm as any)[keyBInd] &&
-						((Dom.isTag(elm, 'iframe') &&
-							editor.o.useIframeResizer) ||
-							(Dom.isTag(elm, 'img') &&
-								editor.o.useImageResizer) ||
-							(Dom.isTag(elm, 'table') &&
-								editor.o.useTableResizer))
-					) {
-						(elm as any)[keyBInd] = true;
-						this.bind(elm);
-					}
-				}
-			);
-		}
+		$$('iframe', this.j.editor).forEach(this.bind);
 	}
 
 	/**
 	 * Bind an edit element toWYSIWYG element
 	 * @param {HTMLElement} element The element that you want toWYSIWYG add a function toWYSIWYG resize
 	 */
-	private bind(element: HTMLElement) {
+	@autobind
+	private bind(element: HTMLElement): void {
+		if ((element as any)[keyBInd]) {
+			return;
+		}
+
+		(element as any)[keyBInd] = true;
 		let wrapper: HTMLElement;
 
 		if (Dom.isTag(element, 'iframe')) {
@@ -361,6 +354,8 @@ export class resizer extends Plugin {
 						'data-jodit_iframe_wrapper="1"' +
 						'></jodit>'
 				);
+
+				attr(wrapper, 'style', attr(element, 'style'));
 
 				css(wrapper, {
 					display:
@@ -392,18 +387,23 @@ export class resizer extends Plugin {
 				});
 		}
 
-		this.j.e
-			.on(element, 'dragstart', this.hide)
-			.on(element, 'mousedown', (event: MouseEvent) => {
-				// for IE don't show native resizer
-				if (IS_IE && Dom.isTag(element, 'img')) {
+		this.j.e.on(element, 'dragstart', this.hide);
+
+		if (!isESNext && IS_IE) {
+			// for IE don't show native resizer
+			this.j.e.on(element, 'mousedown', (event: MouseEvent) => {
+				if (Dom.isTag(element, 'img')) {
 					event.preventDefault();
 				}
-			})
-			.on(element, 'click', () => this.onClickElement(element));
+			});
+		}
 	}
 
-	private onClickElement = (element: HTMLElement) => {
+	private onClickElement = (element: HTMLElement, e: MouseEvent) => {
+		if (this.isResized) {
+			return;
+		}
+
 		if (this.element !== element || !this.isShown) {
 			this.element = element;
 
@@ -514,11 +514,12 @@ export class resizer extends Plugin {
 	 */
 	@autobind
 	private hide(): void {
-		this.isResized = false;
-		this.isShown = false;
-		this.element = null;
-
-		Dom.safeRemove(this.rect);
+		if (!this.isResized) {
+			this.isResized = false;
+			this.isShown = false;
+			this.element = null;
+			Dom.safeRemove(this.rect);
+		}
 	}
 
 	private hideSizeViewer = () => {

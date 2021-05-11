@@ -1,31 +1,37 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
-
-import autobind from 'autobind-decorator';
 
 import './collection.less';
 
-import {
+import type {
 	IToolbarButton,
 	IToolbarCollection,
 	IUIButton,
 	Nullable,
 	IControlTypeStrong,
-	IViewBased
+	IViewBased,
+	ButtonsGroups,
+	CanUndef
 } from '../../../types/';
 
 import { isFunction, isJoditObject } from '../../../core/helpers/';
 
 import { UIList } from '../../../core/ui';
 import { makeButton } from '../factory';
-import { STATUSES } from '../../../core/component';
+import { component, autobind } from '../../../core/decorators';
 
+@component
 export class ToolbarCollection<T extends IViewBased = IViewBased>
 	extends UIList<T>
 	implements IToolbarCollection {
+	/** @override */
+	className(): string {
+		return 'ToolbarCollection';
+	}
+
 	jodit!: T;
 
 	readonly listenEvents =
@@ -50,7 +56,7 @@ export class ToolbarCollection<T extends IViewBased = IViewBased>
 	/**
 	 * Button should be active
 	 */
-	shouldBeActive(button: IToolbarButton): boolean | void {
+	shouldBeActive(button: IToolbarButton): boolean | undefined {
 		if (isJoditObject(this.j) && !this.j.editorIsActive) {
 			return false;
 		}
@@ -65,7 +71,7 @@ export class ToolbarCollection<T extends IViewBased = IViewBased>
 	/**
 	 * Button should be disabled
 	 */
-	shouldBeDisabled(button: IToolbarButton): boolean | void {
+	shouldBeDisabled(button: IToolbarButton): boolean | undefined {
 		if (this.j.o.disabled) {
 			return true;
 		}
@@ -78,7 +84,7 @@ export class ToolbarCollection<T extends IViewBased = IViewBased>
 			return true;
 		}
 
-		let isDisabled: boolean | void;
+		let isDisabled: boolean | undefined;
 
 		if (isFunction(button.control.isDisabled)) {
 			isDisabled = button.control.isDisabled(
@@ -126,7 +132,6 @@ export class ToolbarCollection<T extends IViewBased = IViewBased>
 	constructor(jodit: IViewBased) {
 		super(jodit as T);
 		this.initEvents();
-		this.setStatus(STATUSES.ready);
 	}
 
 	private initEvents() {
@@ -134,6 +139,21 @@ export class ToolbarCollection<T extends IViewBased = IViewBased>
 			// .on(this.j.ow, 'mousedown touchend', this.closeAllPopups)
 			.on(this.listenEvents, this.update)
 			.on('afterSetMode focus', this.immediateUpdate);
+	}
+
+	/** @override **/
+	build(items: ButtonsGroups, target: Nullable<HTMLElement> = null): this {
+		const itemsWithGroupps = this.j.e.fire(
+			'beforeToolbarBuild',
+			items
+		) as CanUndef<ButtonsGroups>;
+
+		if (itemsWithGroupps) {
+			items = itemsWithGroupps;
+		}
+
+		super.build(items, target);
+		return this;
 	}
 
 	/** @override **/

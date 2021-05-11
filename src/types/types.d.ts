@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import { IViewBased } from './view';
@@ -41,11 +41,19 @@ interface IComponent<T extends IViewBased = IViewBased> extends IDestructible {
 	get<T>(chain: string, obj?: IDictionary): Nullable<T>;
 
 	componentName: string;
-	uid: string;
+	getFullElName(elementName: string): string;
+	getFullElName(elementName: string, mod: string): string;
+	getFullElName(
+		elementName: string,
+		mod?: string,
+		modValue?: boolean | string
+	): string;
 
+	uid: string;
 	isDestructed: boolean;
 	isInDestruct: boolean;
 	isReady: boolean;
+
 	componentStatus: ComponentStatus;
 	setStatus(componentStatus: ComponentStatus): void;
 
@@ -61,6 +69,7 @@ interface IViewComponent<T extends IViewBased = IViewBased> extends IComponent {
 	jodit: T;
 	j: this['jodit'];
 	setParentView(jodit: T): this;
+	i18n: T['i18n'];
 	defaultTimeout: number;
 }
 

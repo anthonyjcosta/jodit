@@ -1,22 +1,26 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import {
+import type {
 	Buttons,
+	ButtonsGroup,
 	ButtonsOption,
 	Controls,
+	IControlType,
 	IProgressBar,
 	IToolbarCollection
 } from './toolbar';
-import { IComponent, IContainer, IDictionary, Nullable } from './types';
-import { Attributes, ICreate } from './create';
-import { IStorage } from './storage';
-import { IAsync } from './async';
-import { IUIButtonState } from './ui';
-import { IEventsNative } from './events';
+import type { IComponent, IContainer, IDictionary, Nullable } from './types';
+import type { Attributes, ICreate } from './create';
+import type { IStorage } from './storage';
+import type { IAsync } from './async';
+import type { IUIButtonState } from './ui';
+import type { IEventsNative } from './events';
+import type { IPluginButton } from './plugin';
+import type { Mods, Elms } from '../core/traits';
 
 interface ILanguageOptions {
 	language?: string;
@@ -46,6 +50,7 @@ interface IToolbarOptions {
 type NodeFunction = (elm: HTMLElement) => void;
 
 interface IViewOptions extends ILanguageOptions, IToolbarOptions {
+	headerButtons?: string | Array<IControlType | string | ButtonsGroup>;
 	basePath?: string;
 	theme?: string;
 
@@ -54,6 +59,8 @@ interface IViewOptions extends ILanguageOptions, IToolbarOptions {
 	disabled?: boolean;
 	readonly?: boolean;
 	iframe?: boolean;
+
+	namespace: string;
 
 	activeButtonsInReadOnly?: string[];
 
@@ -70,9 +77,15 @@ interface IViewOptions extends ILanguageOptions, IToolbarOptions {
 	events?: IDictionary<(...args: any[]) => any>;
 
 	shadowRoot?: Nullable<ShadowRoot>;
+
+	ownerWindow?: Window;
 }
 
-interface IViewBased<T = IViewOptions> extends IContainer, IComponent {
+interface IViewBased<T = IViewOptions>
+	extends IContainer,
+		IComponent,
+		Mods,
+		Elms {
 	isView: true;
 
 	/**
@@ -91,6 +104,7 @@ interface IViewBased<T = IViewOptions> extends IContainer, IComponent {
 	toggleFullSize(isFullSize?: boolean): void;
 
 	buffer: IStorage;
+	storage: IStorage;
 
 	progressbar: IProgressBar;
 
@@ -120,6 +134,10 @@ interface IViewBased<T = IViewOptions> extends IContainer, IComponent {
 interface IViewWithToolbar<T = IViewOptions> extends IViewBased<T> {
 	toolbar: IToolbarCollection;
 	toolbarContainer: HTMLElement;
+
+	registeredButtons: Set<IPluginButton>;
+	registerButton(btn: IPluginButton): this;
+	unregisterButton(btn: IPluginButton): this;
 
 	setPanel(element: HTMLElement | string): void;
 }

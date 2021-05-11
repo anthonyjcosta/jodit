@@ -1,26 +1,26 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { Config } from '../config';
-import {
+import type {
 	IDictionary,
 	IRequest,
 	IViewBased,
 	AjaxOptions,
 	IAjax
 } from '../types';
+import { Config } from '../config';
 import {
 	each,
 	error,
-	extend,
 	isPlainObject,
 	parseQuery,
 	buildQuery,
 	isString,
-	isFunction
+	isFunction,
+	ConfigProto
 } from './helpers';
 
 /**
@@ -172,7 +172,19 @@ export class Ajax implements IAjax {
 					resolve.call(this.xhr, __parse(this.response) || {});
 				};
 
+				this.xhr.onprogress = (e): void => {
+					let percentComplete = 0;
+
+					if (e.lengthComputable) {
+						percentComplete = (e.loaded / e.total) * 100;
+					}
+
+					this.options.onProgress?.(percentComplete);
+				};
+
 				this.xhr.onreadystatechange = () => {
+					this.options.onProgress?.(10);
+
 					if (this.xhr.readyState === XMLHttpRequest.DONE) {
 						const resp = this.xhr.responseText;
 
@@ -260,17 +272,13 @@ export class Ajax implements IAjax {
 		return request;
 	}
 
-	constructor(readonly jodit: IViewBased, options: AjaxOptions) {
-		this.options = extend(
-			true,
-			{},
-			Config.prototype.defaultAjaxOptions,
-			options
+	constructor(readonly jodit: IViewBased, options: Partial<AjaxOptions>) {
+		this.options = ConfigProto(
+			options || {},
+			Config.prototype.defaultAjaxOptions
 		) as AjaxOptions;
 
-		if (this.o.xhr) {
-			this.xhr = this.o.xhr();
-		}
+		this.xhr = this.o.xhr ? this.o.xhr() : new XMLHttpRequest();
 
 		jodit &&
 			jodit.events &&

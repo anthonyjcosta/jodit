@@ -1,13 +1,12 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import './table.less';
 
-import autobind from 'autobind-decorator';
-
+import type { IBound, IJodit } from '../../types';
 import * as consts from '../../core/constants';
 import { Plugin, Dom, Table } from '../../modules';
 import {
@@ -17,7 +16,7 @@ import {
 	getContentWidth,
 	offset
 } from '../../core/helpers';
-import { IBound, IJodit } from '../../types';
+import { autobind } from '../../core/decorators';
 
 const key = 'table_processor_observer-resize';
 
@@ -121,7 +120,7 @@ export class resizeCells extends Plugin {
 		this.minX = 0;
 		this.maxX = 1000000;
 
-		if (this.wholeTable !== null) {
+		if (this.wholeTable != null) {
 			tableBox = (this.workTable
 				.parentNode as HTMLElement).getBoundingClientRect();
 
@@ -198,10 +197,6 @@ export class resizeCells extends Plugin {
 		const sel = this.j.s.sel;
 
 		sel && sel.removeAllRanges();
-
-		if (event.preventDefault) {
-			event.preventDefault();
-		}
 	}
 
 	/**
@@ -231,7 +226,7 @@ export class resizeCells extends Plugin {
 
 		if (this.startX !== e.clientX) {
 			// resize column
-			if (this.wholeTable === null) {
+			if (this.wholeTable == null) {
 				this.resizeColumns();
 			} else {
 				this.resizeTable();

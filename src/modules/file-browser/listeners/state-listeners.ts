@@ -1,10 +1,11 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { IFileBrowser, IFileBrowserItem } from '../../../types';
+import type { IFileBrowserItem } from '../../../types';
+import type { FileBrowser } from '../file-browser';
 import { F_CLASS, ITEM_CLASS } from '../consts';
 import { Dom } from '../../../core/dom';
 import { normalizePath } from '../../../core/helpers/normalize';
@@ -16,13 +17,13 @@ const DEFAULT_SOURCE_NAME = 'default',
 /**
  * Convert state to view
  */
-export function stateListeners(this: IFileBrowser): void {
-	const { state, files, create, options } = this,
+export function stateListeners(this: FileBrowser): void {
+	const { state, files, create, options, elementsMap } = this,
 		getDomElement = (item: IFileBrowserItem): HTMLElement => {
 			const key = item.uniqueHashKey;
 
-			if (this.elementsMap[key]) {
-				return this.elementsMap[key].elm;
+			if (elementsMap[key]) {
+				return elementsMap[key].elm;
 			}
 
 			const elm = create.fromHTML(
@@ -36,12 +37,12 @@ export function stateListeners(this: IFileBrowser): void {
 
 			elm.dataset.key = key;
 
-			this.elementsMap[key] = {
+			elementsMap[key] = {
 				item,
 				elm
 			};
 
-			return this.elementsMap[key].elm;
+			return elementsMap[key].elm;
 		};
 
 	state
@@ -54,7 +55,7 @@ export function stateListeners(this: IFileBrowser): void {
 		.on('beforeChange.activeElements', () => {
 			state.activeElements.forEach(item => {
 				const key = item.uniqueHashKey,
-					{ elm } = this.elementsMap[key];
+					{ elm } = elementsMap[key];
 
 				elm && elm.classList.remove(ITEM_ACTIVE_CLASS);
 			});
@@ -65,7 +66,7 @@ export function stateListeners(this: IFileBrowser): void {
 
 			state.activeElements.forEach(item => {
 				const key = item.uniqueHashKey,
-					{ elm } = this.elementsMap[key];
+					{ elm } = elementsMap[key];
 
 				elm && elm.classList.add(ITEM_ACTIVE_CLASS);
 			});
@@ -108,8 +109,8 @@ export function stateListeners(this: IFileBrowser): void {
 			this.async.debounce(() => {
 				Dom.detach(this.tree);
 
-				Object.keys(state.sources).forEach((sourceName: string) => {
-					const source = state.sources[sourceName];
+				state.sources.forEach(source => {
+					const sourceName = source.name;
 
 					if (sourceName && sourceName !== DEFAULT_SOURCE_NAME) {
 						this.tree.appendChild(
@@ -117,7 +118,7 @@ export function stateListeners(this: IFileBrowser): void {
 						);
 					}
 
-					source.folders.forEach(name => {
+					source.folders.forEach((name: string) => {
 						const folderElm = create.a(
 							F_CLASS + '__tree-item',
 							{

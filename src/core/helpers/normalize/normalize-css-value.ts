@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import { isNumeric } from '../checker/';
@@ -28,7 +28,7 @@ export function normalizeCssValue(
 					return 900;
 			}
 
-			return isNumeric(value) ? +value : value;
+			return isNumeric(value) ? Number(value) : value;
 	}
 
 	if (/color/i.test(key) && /^rgb/i.test(value.toString())) {

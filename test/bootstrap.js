@@ -1,8 +1,11 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
+
+/* eslint no-unused-vars: 0 */
+
 typeof window.chai !== 'undefined' &&
 	(function () {
 		chai.config.includeStack = true;
@@ -21,6 +24,17 @@ function mockPromise() {
 
 function unmockPromise() {
 	window.Promise = naturalPromise;
+}
+
+/**
+ *
+ * @param {number} timeout
+ * @return {*}
+ */
+function delay(timeout) {
+	return new naturalPromise(resolve => {
+		setTimeout(resolve, timeout);
+	});
 }
 
 const defaultPermissions = {
@@ -50,6 +64,7 @@ function mockAjax() {
 			const request = this.prepareRequest();
 
 			let action = request.data.action;
+			let path = request.data.path;
 
 			if (!action && request.data.get) {
 				action = request.data.get('action');
@@ -60,9 +75,55 @@ function mockAjax() {
 				request.url &&
 				request.url.match(/action=/)
 			) {
-				const actioExec = /action=([\w]+)/.exec(request.url);
-				action = actioExec[1];
+				const actionExec = /action=([\w]+)/.exec(request.url);
+				action = actionExec[1];
 			}
+
+			const files = path => {
+				const list = [
+					{
+						file:
+							'1966051_524428741092238_1051008806888563137_o.jpg',
+						thumb:
+							'_thumbs/1966051_524428741092238_1051008806888563137_o.jpg',
+						changed: '03/15/2018 12:40 PM',
+						size: '126.59kB',
+						isImage: true
+					},
+					{
+						file: 'images.jpg',
+						thumb: '_thumbs/images.jpg',
+						changed: '01/15/2018 12:40 PM',
+						size: '6.84kB',
+						isImage: true
+					},
+					{
+						file: 'ibanez-s520-443140.jpg',
+						thumb: '_thumbs/ibanez-s520-443140.jpg',
+						changed: '04/15/2018 12:40 PM',
+						size: '18.73kB',
+						isImage: true
+					},
+					{
+						file: 'test.txt',
+						thumb: '_thumbs/test.txt.png',
+						changed: '05/15/2018 12:40 PM',
+						size: '18.72kB',
+						isImage: false
+					}
+				];
+
+				switch (path) {
+					case 'test':
+						return [list[1], list[2]];
+
+					case 'ceicom':
+						return [list[0], list[3]];
+
+					default:
+						return list;
+				}
+			};
 
 			return new Promise(function (resolve) {
 				switch (action) {
@@ -106,46 +167,15 @@ function mockAjax() {
 							success: true,
 							time: '2018-03-15 12:49:49',
 							data: {
-								sources: {
-									default: {
+								sources: [
+									{
+										name: 'default',
 										baseurl:
 											'https://xdsoft.net/jodit/files/',
 										path: '',
-										files: [
-											{
-												file:
-													'1966051_524428741092238_1051008806888563137_o.jpg',
-												thumb:
-													'_thumbs/1966051_524428741092238_1051008806888563137_o.jpg',
-												changed: '03/15/2018 12:40 PM',
-												size: '126.59kB',
-												isImage: true
-											},
-											{
-												file: 'images.jpg',
-												thumb: '_thumbs/images.jpg',
-												changed: '01/15/2018 12:40 PM',
-												size: '6.84kB',
-												isImage: true
-											},
-											{
-												file: 'ibanez-s520-443140.jpg',
-												thumb:
-													'_thumbs/ibanez-s520-443140.jpg',
-												changed: '04/15/2018 12:40 PM',
-												size: '18.73kB',
-												isImage: true
-											},
-											{
-												file: 'test.txt',
-												thumb: '_thumbs/test.txt.png',
-												changed: '05/15/2018 12:40 PM',
-												size: '18.72kB',
-												isImage: false
-											}
-										]
+										files: files(path)
 									}
-								},
+								],
 								code: 220
 							}
 						});
@@ -158,14 +188,19 @@ function mockAjax() {
 							success: true,
 							time: '2018-03-15 12:49:49',
 							data: {
-								sources: {
-									default: {
+								sources: [
+									{
+										name: 'default',
+										title: 'Some files',
 										baseurl:
 											'https://xdsoft.net/jodit/files/',
 										path: '',
-										folders: ['.', folderName, 'test']
+										folders:
+											path === ''
+												? ['.', folderName, 'test']
+												: []
 									}
-								},
+								],
 								code: 220
 							}
 						});
@@ -262,6 +297,20 @@ if (typeof window.chai !== 'undefined') {
 
 const i18nkeys = [];
 const excludeI18nKeys = [
+	'bar',
+	'Classe 1',
+	'Classe 2',
+	'Classe 3',
+	'Classe 4',
+	'Classe 5',
+	'classSpan',
+	'text3',
+	'text2',
+	'text1',
+	'Class name',
+	'https://',
+	'http://',
+	'rect',
 	'empty',
 	'adddate',
 	'URL',
@@ -307,6 +356,7 @@ Jodit.defaultOptions.events.afterInit = function (editor) {
 };
 Jodit.defaultOptions.filebrowser.saveStateInStorage = false;
 Jodit.defaultOptions.observer.timeout = 0;
+Jodit.defaultOptions.filebrowser.defaultTimeout = 0;
 Jodit.modules.View.defaultOptions.defaultTimeout = 0;
 
 if (Jodit.defaultOptions.cleanHTML) {
@@ -340,13 +390,22 @@ if (String.prototype.repeat === undefined) {
 	};
 }
 
-const expect = typeof chai !== 'undefined' ? chai.expect : function () {},
+var expect = typeof chai !== 'undefined' ? chai.expect : function () {},
 	stuff = [];
 
-const stringify = Jodit.ns.Helpers.stringify;
-const box = document.createElement('div');
+var stringify = Jodit.ns.Helpers.stringify;
+var box = document.createElement('div');
 
 document.body.appendChild(box);
+
+function flatten(obj) {
+	var result = Object.create(obj);
+	for (var key in result) {
+		// eslint-disable-next-line no-self-assign
+		result[key] = result[key];
+	}
+	return result;
+}
 
 function getBox() {
 	return box;
@@ -364,7 +423,9 @@ function removeStuff() {
 	stuff.length = 0;
 
 	Array.from(
-		document.querySelectorAll('.jodit.jodit-dialog__box.active')
+		document.querySelectorAll(
+			'.jodit.jodit-dialog.jodit-dialog_active_true'
+		)
 	).forEach(function (dialog) {
 		simulateEvent('close_dialog', 0, dialog);
 	});
@@ -473,11 +534,12 @@ function sortStyles(matches) {
 			}
 
 			if (/rgb\(/.test(keyValue[1])) {
-				keyValue[1] = keyValue[1].replace(/rgb\([^)]+\)/, function (
-					match
-				) {
-					return Jodit.modules.Helpers.normalizeColor(match);
-				});
+				keyValue[1] = keyValue[1].replace(
+					/rgb\([^)]+\)/,
+					function (match) {
+						return Jodit.modules.Helpers.normalizeColor(match);
+					}
+				);
 			}
 
 			if (keyValue[0].match(/^border$/)) {
@@ -485,7 +547,7 @@ function sortStyles(matches) {
 			}
 
 			if (keyValue[0].match(/^border-(style|width|color)/)) {
-				if (border === null) {
+				if (border == null) {
 					border = keyValue;
 					keyValue[0] = 'border';
 					keyValue[1] = [keyValue[1]];
@@ -516,7 +578,7 @@ function sortStyles(matches) {
 			return keyValue;
 		})
 		.filter(function (a) {
-			return a !== null;
+			return a != null;
 		})
 		.map(function (a) {
 			return a
@@ -628,6 +690,7 @@ const codeKey = {
 	73: 'i',
 	70: 'f',
 	72: 'h',
+	75: 'k',
 	86: 'v',
 	89: 'y',
 	114: 'F3'
@@ -640,9 +703,9 @@ const keyCode = Object.keys(codeKey).reduce((res, code) => {
 
 /**
  *
- * @param {string} type
- * @param {string|number|HTMLElement} keyCodeOrElement
- * @param {HTMLElement} [element]
+ * @param {string|string[]} type
+ * @param {string|number|HTMLElement|Jodit} keyCodeOrElement
+ * @param {HTMLElement|Jodit} [element]
  * @param {Function} [applyOpt]
  *
  * @returns boolean
@@ -670,6 +733,10 @@ function simulateEvent(type, keyCodeOrElement, elementOrApplyOpt, applyOpt) {
 		});
 	}
 
+	if (element instanceof Jodit) {
+		element = element.editor;
+	}
+
 	const evt = (element.ownerDocument || document).createEvent('HTMLEvents');
 
 	evt.initEvent(type, true, true);
@@ -681,7 +748,7 @@ function simulateEvent(type, keyCodeOrElement, elementOrApplyOpt, applyOpt) {
 			evt.key = codeKey[keyCodeOrElement];
 		} else if (typeof keyCodeOrElement !== 'object') {
 			evt.key = keyCodeOrElement;
-			evt.which = keyCodeOrElement[keyCodeOrElement];
+			evt.which = keyCode[keyCodeOrElement];
 		}
 	}
 
@@ -730,7 +797,7 @@ function getOpenedPopup(editor) {
  * @return {HTMLElement|null}
  */
 function getOpenedDialog(editor) {
-	const dlgs = editor.ownerDocument.querySelectorAll('.jodit-dialog__box');
+	const dlgs = editor.ownerDocument.querySelectorAll('.jodit-dialog');
 
 	return dlgs.length ? dlgs[dlgs.length - 1] : null;
 }
@@ -854,6 +921,50 @@ function setCursor(elm, inEnd) {
 	window.getSelection().addRange(range);
 }
 
+/**
+ * Set cursor inside editor by some char
+ *
+ * @param {Jodit} editor
+ * @param {string} [char]
+ * @return boolean
+ */
+function setCursorToChar(editor, char = '|') {
+	const r = editor.s.createRange();
+	let foundEdges = [];
+
+	Jodit.modules.Dom.each(editor.editor, function (node) {
+		if (node.nodeType === Node.TEXT_NODE && node.nodeValue.includes(char)) {
+			let index = -1;
+			do {
+				index = node.nodeValue.indexOf(char, index + 1);
+
+				if (index !== -1) {
+					node.nodeValue = node.nodeValue.replace(char, '');
+					foundEdges.push([node, index]);
+				}
+			} while (index !== -1);
+		}
+
+		return true;
+	});
+
+	if (foundEdges.length) {
+		if (foundEdges[0]) {
+			r.setStart(foundEdges[0][0], foundEdges[0][1]);
+		}
+
+		if (foundEdges[1]) {
+			r.setEnd(foundEdges[1][0], foundEdges[1][1]);
+		}
+
+		editor.s.selectRange(r);
+
+		return true;
+	}
+
+	return false;
+}
+
 function createPoint(x, y, color, fixed = false) {
 	const div = document.createElement('div');
 
@@ -898,7 +1009,6 @@ function offset(el) {
  *
  * I haven't decided on the best name for this property - thus the duplication.
  */
-
 (function () {
 	const serializeXML = function (node, output) {
 		const nodeType = node.nodeType;

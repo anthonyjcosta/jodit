@@ -1,19 +1,13 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
+import type { HTMLTagNames, IJodit, IControlType, IDictionary } from '../types';
 import { Config } from '../config';
 import { Dom } from '../modules/';
-import {
-	HTMLTagNames,
-	IJodit,
-	// markerInfo,
-	IControlType,
-	IDictionary
-} from '../types';
-import { dataBind, isVoid } from '../core/helpers';
+import { memorizeExec } from '../core/helpers';
 
 Config.prototype.controls.paragraph = {
 	command: 'formatBlock',
@@ -52,24 +46,7 @@ Config.prototype.controls.paragraph = {
 		return false;
 	},
 
-	exec: (editor: IJodit, event, { control }): void | false => {
-		const key = `button${control.command}`;
-
-		const value =
-			(control.args && control.args[0]) || dataBind(editor, key);
-
-		if (isVoid(value)) {
-			return false;
-		}
-
-		dataBind(editor, key, value);
-
-		editor.execCommand(
-			control.command as string,
-			false,
-			value || undefined
-		);
-	},
+	exec: memorizeExec,
 
 	data: {
 		currentValue: 'left'
@@ -143,6 +120,11 @@ Config.prototype.controls.paragraph = {
  * @param {Jodit} editor
  */
 export function formatBlock(editor: IJodit): void {
+	editor.registerButton({
+		name: 'paragraph',
+		group: 'font'
+	});
+
 	editor.registerCommand(
 		'formatblock',
 		(command: string, second: string, third: string): false | void => {

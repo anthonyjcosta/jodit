@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 describe('Jodit Editor Tests', function () {
 	describe('Constructor', function () {
@@ -28,43 +28,53 @@ describe('Jodit Editor Tests', function () {
 			describe('Undefined,null,false,bad seelctor,function,number, text node', function () {
 				it('Should be not valid selector', function () {
 					expect(function () {
+						// eslint-disable-next-line no-new
 						new Jodit(0);
 					}).to.throw(Error);
 
 					expect(function () {
+						// eslint-disable-next-line no-new
 						new Jodit();
 					}).to.throw(Error);
 
 					expect(function () {
+						// eslint-disable-next-line no-new
 						new Jodit(null);
 					}).to.throw(Error);
 
 					expect(function () {
+						// eslint-disable-next-line no-new
 						new Jodit(false);
 					}).to.throw(Error);
 
 					expect(function () {
+						// eslint-disable-next-line no-new
 						new Jodit('.salomon');
 					}).to.throw(Error);
 
 					expect(function () {
+						// eslint-disable-next-line no-new
 						new Jodit('>asdsad.salomon');
 					}).to.throw(Error);
 
 					expect(function () {
+						// eslint-disable-next-line no-new
 						new Jodit(function () {});
 					}).to.throw(Error);
 
 					expect(function () {
+						// eslint-disable-next-line no-new
 						new Jodit(233);
 					}).to.throw(Error);
 
 					const elm = document.createTextNode('stop');
 					expect(function () {
+						// eslint-disable-next-line no-new
 						new Jodit(elm);
 					}).to.throw(Error);
 				});
 			});
+
 			describe('HTMLTextAreaElement', function () {
 				it('Should be instance of HTMLElement', function () {
 					const area = appendTestArea('editor2');
@@ -125,6 +135,25 @@ describe('Jodit Editor Tests', function () {
 			}
 		});
 
+		describe('Source textarea', () => {
+			it('should have component properties with Jodit instance', function () {
+				const area = appendTestArea();
+
+				const editor = getJodit(undefined, area);
+				expect(area.component).equals(editor);
+			});
+
+			describe('After destruct', () => {
+				it('should not have component properties with Jodit instance', function () {
+					const area = appendTestArea();
+
+					const editor = getJodit(undefined, area);
+					editor.destruct();
+					expect(area.component).is.null;
+				});
+			});
+		});
+
 		describe('Options', function () {
 			it('Options should be inherited from the default values', function () {
 				const editor = getJodit({
@@ -151,7 +180,7 @@ describe('Jodit Editor Tests', function () {
 					);
 				});
 
-				describe('Set nested array like Jodit.Array', function () {
+				describe('Set nested array like Jodit.atom', function () {
 					it('Should create editor with set array', function () {
 						Jodit.defaultOptions.someArray = {
 							data: [1, 2, 3, 4]
@@ -159,91 +188,13 @@ describe('Jodit Editor Tests', function () {
 
 						const editor = getJodit({
 							someArray: {
-								data: Jodit.Array([5, 6, 7])
+								data: Jodit.atom([5, 6, 7])
 							}
 						});
 
 						expect(editor.options.someArray.data.toString()).equals(
 							'5,6,7'
 						);
-					});
-
-					describe('Then Jodit.Array has another namespace', function () {
-						it('Should create editor with set array', function () {
-							const area = appendTestArea();
-
-							function JoditArray(data) {
-								const self = this;
-
-								Object.defineProperty(self, 'length', {
-									value: data.length,
-									enumerable: false,
-									configurable: false
-								});
-
-								Object.defineProperty(this, 'toString', {
-									value: function () {
-										const out = [];
-
-										for (
-											let i = 0;
-											i < self.length;
-											i += 1
-										) {
-											out[i] = self[i];
-										}
-
-										return out.toString();
-									},
-									enumerable: false,
-									configurable: false
-								});
-
-								Jodit.modules.Helpers.extend(true, this, data);
-
-								const proto = Array.prototype;
-
-								[
-									'map',
-									'forEach',
-									'reduce',
-									'push',
-									'pop',
-									'shift',
-									'unshift',
-									'slice',
-									'splice'
-								].forEach(function (method) {
-									Object.defineProperty(self, method, {
-										value: proto[method],
-										enumerable: false,
-										configurable: false
-									});
-								});
-							}
-
-							Jodit.defaultOptions.someArray = {
-								data: [1, 2, 3, 4]
-							};
-
-							const editor = new Jodit(area, {
-								someArray: {
-									data: new JoditArray([5, 6, 7])
-								}
-							});
-
-							expect(
-								editor.options.someArray.data.toString()
-							).equals('5,6,7');
-
-							const res = [];
-							for (const r in editor.options.someArray.data) {
-								res.push(r);
-							}
-
-							expect(res.length).equals(3);
-							expect(res.toString()).equals('0,1,2');
-						});
 					});
 				});
 			});
@@ -267,11 +218,11 @@ describe('Jodit Editor Tests', function () {
 					});
 
 					expect(
-						JSON.stringify(editor.options.someObject.data)
-					).equals('{"left":10,"right":10,"top":10}');
+						JSON.stringify(flatten(editor.options.someObject.data))
+					).equals('{"top":10,"right":10,"left":10}');
 				});
 
-				describe('Set nested object like Jodit.Object', function () {
+				describe('Set nested object like Jodit.atom', function () {
 					it('Should create editor with set object', function () {
 						Jodit.defaultOptions.someObject = {
 							data: {
@@ -282,7 +233,7 @@ describe('Jodit Editor Tests', function () {
 
 						const editor = getJodit({
 							someObject: {
-								data: Jodit.Object({
+								data: Jodit.atom({
 									top: 10,
 									right: 10
 								})
@@ -292,6 +243,61 @@ describe('Jodit Editor Tests', function () {
 						expect(
 							JSON.stringify(editor.options.someObject.data)
 						).equals('{"top":10,"right":10}');
+					});
+				});
+			});
+
+			describe('Statusbar', function () {
+				describe('Hide', function () {
+					it('should not show statusbar', function () {
+						const editor = getJodit({
+							statusbar: false
+						});
+
+						expect(
+							editor.container
+								.querySelector('.jodit-status-bar')
+								.classList.contains('jodit_hidden')
+						).is.true;
+
+						expect(editor.statusbar.isShown).is.false;
+					});
+
+					describe('Show programmatically', function () {
+						it('should show statusbar', function () {
+							const editor = getJodit({
+								statusbar: false
+							});
+
+							expect(
+								editor.container
+									.querySelector('.jodit-status-bar')
+									.classList.contains('jodit_hidden')
+							).is.true;
+							expect(editor.statusbar.isShown).is.false;
+
+							editor.statusbar.show();
+
+							expect(
+								editor.container
+									.querySelector('.jodit-status-bar')
+									.classList.contains('jodit_hidden')
+							).is.false;
+							expect(editor.statusbar.isShown).is.true;
+						});
+					});
+				});
+
+				describe('Show', function () {
+					it('should show statusbar', function () {
+						const editor = getJodit();
+
+						expect(
+							editor.container
+								.querySelector('.jodit-status-bar')
+								.classList.contains('jodit_hidden')
+						).is.false;
+						expect(editor.statusbar.isShown).is.true;
 					});
 				});
 			});
@@ -539,19 +545,18 @@ describe('Jodit Editor Tests', function () {
 					editor.value = 'test';
 					expect(editor.value).equals('<p>test</p>');
 
-					editor.events.on('beforeSetValueToEditor', function (
-						old_value
-					) {
-						return old_value + ' stop';
-					});
+					editor.events.on(
+						'beforeSetValueToEditor',
+						function (old_value) {
+							return old_value + ' stop';
+						}
+					);
 
 					editor.value = 'test';
 
 					expect(editor.value).equals('<p>test stop</p>');
 
-					editor.events.on('beforeSetValueToEditor', function (
-						old_value
-					) {
+					editor.events.on('beforeSetValueToEditor', function () {
 						return false;
 					});
 
@@ -735,6 +740,10 @@ describe('Jodit Editor Tests', function () {
 					p = document.createElement('p'),
 					editor = getJodit();
 
+				editor.s.focus({
+					preventScroll: false
+				});
+
 				input.type = 'input';
 				document.body.appendChild(input);
 
@@ -748,11 +757,12 @@ describe('Jodit Editor Tests', function () {
 				expect(editor.editorIsActive).is.true;
 
 				input.focus();
-				simulateEvent('blur', 0, editor.editor);
+				simulateEvent('blur', editor.editor);
 				expect(editor.editorIsActive).is.false;
 				document.body.removeChild(input);
 
 				editor.s.focus();
+				simulateEvent('focus', editor.editor);
 				editor.s.setCursorAfter(editor.editor.firstChild);
 				expect(editor.editorIsActive).is.true;
 
@@ -760,7 +770,7 @@ describe('Jodit Editor Tests', function () {
 
 				range.selectNodeContents(p);
 
-				simulateEvent('blur', 0, editor.editor);
+				simulateEvent('blur', editor.editor);
 				expect(editor.editorIsActive).is.false;
 				document.body.removeChild(p);
 			});

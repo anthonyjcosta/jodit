@@ -1,12 +1,18 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
+
+import type { IDictionary, IJodit } from '../../types';
 import { Config } from '../../config';
 import { Plugin } from '../../core/plugin';
-import { normalizeKeyAliases } from '../../core/helpers';
-import { IDictionary, IJodit } from '../../types';
+import {
+	isArray,
+	isString,
+	keys,
+	normalizeKeyAliases
+} from '../../core/helpers';
 import { KEY_ESC } from '../../core/constants';
 
 declare module '../../config' {
@@ -122,17 +128,17 @@ export class hotkeys extends Plugin {
 		222: "'"
 	};
 
+	/** @override */
 	afterInit(editor: IJodit): void {
-		const commands: string[] = Object.keys(editor.o.commandToHotkeys);
+		keys(editor.o.commandToHotkeys, false).forEach(
+			(commandName: string) => {
+				const shortcuts = editor.o.commandToHotkeys[commandName];
 
-		commands.forEach((commandName: string) => {
-			const shortcuts: string | string[] | void =
-				editor.o.commandToHotkeys[commandName];
-
-			if (shortcuts) {
-				editor.registerHotkeyToCommand(shortcuts, commandName);
+				if (shortcuts && (isArray(shortcuts) || isString(shortcuts))) {
+					editor.registerHotkeyToCommand(shortcuts, commandName);
+				}
 			}
-		});
+		);
 
 		let itIsHotkey: boolean = false;
 
@@ -150,19 +156,25 @@ export class hotkeys extends Plugin {
 			.on(
 				'keydown.hotkeys',
 				(event: KeyboardEvent): void | false => {
-					const shortcut: string = this.onKeyPress(event);
+					const shortcut: string = this.onKeyPress(event),
+						stop = {
+							shouldStop: true
+						};
 
 					const resultOfFire = this.j.e.fire(
 						shortcut + '.hotkey',
-						event.type
+						event.type,
+						stop
 					);
 
 					if (resultOfFire === false) {
-						itIsHotkey = true;
-
-						editor.e.stopPropagation('keydown');
-
-						return false;
+						if (stop.shouldStop) {
+							itIsHotkey = true;
+							editor.e.stopPropagation('keydown');
+							return false;
+						} else {
+							event.preventDefault();
+						}
 					}
 				},
 				undefined,
@@ -181,6 +193,8 @@ export class hotkeys extends Plugin {
 				true
 			);
 	}
+
+	/** @override */
 	beforeDestruct(jodit: IJodit): void {
 		if (jodit.events) {
 			jodit.e.off('.hotkeys');

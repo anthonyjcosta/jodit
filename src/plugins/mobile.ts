@@ -1,21 +1,22 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { Config } from '../config';
-import * as consts from '../core/constants';
-import {
-	Buttons,
+import type {
 	IControlType,
 	IToolbarCollection,
 	IJodit,
-	CanUndef
+	CanUndef,
+	ButtonsGroups
 } from '../types/';
+import { Config } from '../config';
+import * as consts from '../core/constants';
 import { splitArray } from '../core/helpers/';
 import { makeCollection } from '../modules/toolbar/factory';
 import { UIList } from '../core/ui';
+import { flatButtonsSet, isButtonGroup } from '../core/ui/helpers/buttons';
 
 declare module '../config' {
 	interface Config {
@@ -57,9 +58,9 @@ Config.prototype.controls.dots = {
 				toolbar: makeCollection(editor),
 				rebuild: () => {
 					if (button) {
-						const buttons: CanUndef<Array<
-							string | IControlType
-						>> = editor.e.fire(
+						const buttons: CanUndef<
+							Array<string | IControlType>
+						> = editor.e.fire(
 							'getDiffButtons.mobile',
 							button.closest(UIList)
 						);
@@ -93,33 +94,52 @@ Config.prototype.controls.dots = {
  */
 export function mobile(editor: IJodit): void {
 	let timeout: number = 0,
-		store: Array<string | IControlType> = splitArray(editor.o.buttons);
+		store: ButtonsGroups = splitArray(editor.o.buttons);
 
-	editor.e
-		.on('touchend', (e: TouchEvent) => {
+	if (editor.o.mobileTapTimeout) {
+		editor.e.on('touchend', (e: TouchEvent) => {
 			if (e.changedTouches && e.changedTouches.length) {
-				const now = new Date().getTime();
+				const now = new Date().getTime(),
+					diff = now - timeout;
 
-				if (now - timeout > editor.o.mobileTapTimeout) {
+				if (diff > editor.o.mobileTapTimeout) {
 					timeout = now;
-					editor.s.insertCursorAtPoint(
-						e.changedTouches[0].clientX,
-						e.changedTouches[0].clientY
-					);
-				}
-			}
-		})
 
-		.on(
-			'getDiffButtons.mobile',
-			(toolbar: IToolbarCollection): void | Buttons => {
-				if (toolbar === editor.toolbar) {
-					return splitArray(editor.o.buttons).filter(
-						i => !store.includes(i)
-					);
+					if (diff < editor.o.mobileTapTimeout * 1.5) {
+						editor.s.insertCursorAtPoint(
+							e.changedTouches[0].clientX,
+							e.changedTouches[0].clientY
+						);
+					}
 				}
 			}
-		);
+		});
+	}
+
+	editor.e.on(
+		'getDiffButtons.mobile',
+		(toolbar: IToolbarCollection): void | ButtonsGroups => {
+			if (toolbar === editor.toolbar) {
+				const buttons: ButtonsGroups = splitArray(editor.o.buttons),
+					flatStore = flatButtonsSet(store);
+
+				return buttons.reduce((acc, item) => {
+					if (isButtonGroup(item)) {
+						acc.push({
+							...item,
+							buttons: item.buttons.filter(
+								btn => !flatStore.has(btn)
+							)
+						});
+					} else if (!flatStore.has(item)) {
+						acc.push(item);
+					}
+
+					return acc;
+				}, [] as ButtonsGroups);
+			}
+		}
+	);
 
 	if (editor.o.toolbarAdaptive) {
 		editor.e

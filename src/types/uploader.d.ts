@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import { IDictionary, IViewComponent } from './types';
@@ -161,7 +161,9 @@ export type BuildDataResult =
  *  });
  */
 export interface IUploaderOptions<T> {
-	url: string;
+	url:
+		| string
+		| ((request: FormData | IDictionary<string> | string) => string);
 	insertImageAsBase64URI: boolean;
 	imagesExtensions: string[];
 	headers?: IDictionary<string> | null;
@@ -197,17 +199,17 @@ export interface IUploaderOptions<T> {
 export interface IUploader extends IViewComponent {
 	buildData(data: FormData | IDictionary<string> | string): BuildDataResult;
 
-	send(
-		data: FormData | IDictionary<string>,
-		success: (resp: IUploaderAnswer) => void
-	): Promise<any>;
+	// send(
+	// 	data: FormData | IDictionary<string>,
+	// 	success: (resp: IUploaderAnswer) => void
+	// ): Promise<any>;
 
-	sendFiles(
-		files: FileList | File[] | null,
-		handlerSuccess?: HandlerSuccess,
-		handlerError?: HandlerError,
-		process?: (form: FormData) => void
-	): Promise<any>;
+	// sendFiles(
+	// 	files: FileList | File[] | null,
+	// 	handlerSuccess?: HandlerSuccess,
+	// 	handlerError?: HandlerError,
+	// 	process?: (form: FormData) => void
+	// ): Promise<any>;
 
 	bind(
 		form: HTMLElement,

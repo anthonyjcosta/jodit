@@ -1,18 +1,14 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
+import type { HTMLTagNames, IFileBrowserItem, Nullable } from '../../../types';
+import type { FileBrowser } from '../file-browser';
 import { ctrlKey, attr } from '../../../core/helpers';
 import { F_CLASS, ITEM_CLASS } from '../consts';
 import contextMenu from '../builders/context-menu';
-import {
-	HTMLTagNames,
-	IFileBrowser,
-	IFileBrowserItem,
-	Nullable
-} from '../../../types';
 import { Dom } from '../../../core/dom';
 
 export const getItem = (
@@ -26,7 +22,7 @@ export const getItem = (
 		root
 	);
 
-export function nativeListeners(this: IFileBrowser): void {
+export function nativeListeners(this: FileBrowser): void {
 	let dragElement: false | HTMLElement = false;
 
 	const self = this;
@@ -84,12 +80,8 @@ export function nativeListeners(this: IFileBrowser): void {
 						attr(a, '-source') || '',
 						dragElement.classList.contains(ITEM_CLASS)
 					)
-					.then(resp => {
-						if (self.o.isSuccess(resp)) {
-							self.loadTree();
-						} else {
-							self.status(self.o.getMessage(resp));
-						}
+					.then(() => {
+						self.loadTree();
 					}, self.status);
 
 				dragElement = false;

@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 import { CallbackFunction, IDestructible } from './types';
@@ -10,6 +10,12 @@ export type ITimeout = number | (() => number);
 export interface IAsyncParams {
 	timeout?: number;
 	label?: string;
+	promisify?: boolean;
+}
+
+interface RejectablePromise<T> extends Promise<T> {
+	rejectCallback: (reason?: any) => void;
+	finally(onfinally?: (() => void) | undefined | null): Promise<T>;
 }
 
 export interface IAsync extends IDestructible {
@@ -25,10 +31,10 @@ export interface IAsync extends IDestructible {
 
 	promise<T>(
 		executor: (
-			resolve: (value?: T | PromiseLike<T>) => void,
+			resolve: (value: T | PromiseLike<T>) => void,
 			reject?: (reason?: any) => void
 		) => void
-	): Promise<T>;
+	): RejectablePromise<T>;
 
 	promiseState(
 		p: Promise<any>
@@ -36,9 +42,17 @@ export interface IAsync extends IDestructible {
 
 	debounce(
 		fn: CallbackFunction,
-		timeout: ITimeout,
+		timeout: ITimeout | IAsyncParams,
 		firstCallImmediately?: boolean
 	): CallbackFunction;
 
-	throttle(fn: CallbackFunction, timeout: ITimeout): CallbackFunction;
+	throttle(
+		fn: CallbackFunction,
+		timeout: ITimeout | IAsyncParams,
+		firstCallImmediately?: boolean
+	): CallbackFunction;
+
+	requestIdleCallback(fn: CallbackFunction): number;
+	requestIdlePromise(): Promise<number>;
+	cancelIdleCallback(request: number): void;
 }

@@ -1,7 +1,7 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
 describe('Text Inline Popup plugin', function () {
@@ -17,7 +17,7 @@ describe('Text Inline Popup plugin', function () {
 
 				const popup = getOpenedPopup(editor);
 
-				expect(popup && popup.parentNode.parentNode !== null).equals(
+				expect(popup && popup.parentNode.parentNode != null).equals(
 					true
 				);
 			});
@@ -29,23 +29,17 @@ describe('Text Inline Popup plugin', function () {
 					editor.value = '<img alt="" src="../artio.jpg"/>';
 					editor.s.focus();
 
-					simulateEvent(
-						'click',
-						0,
-						editor.editor.querySelector('img')
-					);
+					simulateEvent('click', editor.editor.querySelector('img'));
 
 					const popup = getOpenedPopup(editor);
 
-					expect(popup && popup.parentNode.parentNode !== null).is
+					expect(popup && popup.parentNode.parentNode != null).is
 						.true;
 
 					clickButton('pencil', popup);
 
 					const dialog = editor.ownerDocument.querySelector(
-						'.jodit.jodit-dialog__box[data-editor_id=' +
-							editor.id +
-							']'
+						'.jodit.jodit-dialog[data-editor_id=' + editor.id + ']'
 					);
 
 					expect(dialog).is.not.null;
@@ -65,7 +59,7 @@ describe('Text Inline Popup plugin', function () {
 
 				const popup = getOpenedPopup(editor);
 
-				expect(popup && popup.parentNode.parentNode !== null).equals(
+				expect(popup && popup.parentNode.parentNode != null).equals(
 					true
 				);
 			});
@@ -79,7 +73,7 @@ describe('Text Inline Popup plugin', function () {
 
 					const popup = getOpenedPopup(editor);
 
-					expect(popup && popup.parentNode.parentNode !== null).is
+					expect(popup && popup.parentNode.parentNode != null).is
 						.true;
 
 					clickButton('link', popup);
@@ -113,7 +107,8 @@ describe('Text Inline Popup plugin', function () {
 						const linkEditor = getOpenedPopup(editor);
 
 						expect(
-							linkEditor.querySelector('[data-ref="url_input"]').value
+							linkEditor.querySelector('[data-ref="url_input"]')
+								.value
 						).equals('#test1');
 
 						simulateEvent(
@@ -128,7 +123,8 @@ describe('Text Inline Popup plugin', function () {
 						const linkEditor2 = getOpenedPopup(editor);
 
 						expect(
-							linkEditor2.querySelector('[data-ref="url_input"]').value
+							linkEditor2.querySelector('[data-ref="url_input"]')
+								.value
 						).equals('#test2');
 					});
 				});
@@ -189,7 +185,7 @@ describe('Text Inline Popup plugin', function () {
 
 						const popup = getOpenedPopup(editor);
 
-						expect(popup && popup.parentNode.parentNode !== null).is
+						expect(popup && popup.parentNode.parentNode != null).is
 							.true;
 
 						clickTrigger('brush', popup);
@@ -247,7 +243,7 @@ describe('Text Inline Popup plugin', function () {
 			const td = editor.editor.querySelector('td'),
 				pos = Jodit.modules.Helpers.position(td);
 
-			simulateEvent(['mousedown', 'mouseup', 'click'], 0, td, e => {
+			simulateEvent(['mousedown', 'mouseup', 'click'], td, e => {
 				Object.assign(e, {
 					clientX: pos.left,
 					clientY: pos.top
@@ -255,7 +251,7 @@ describe('Text Inline Popup plugin', function () {
 			});
 
 			const popup = getOpenedPopup(editor);
-			expect(popup && popup.parentNode.parentNode !== null).is.true;
+			expect(popup && popup.parentNode.parentNode != null).is.true;
 
 			clickTrigger('valign', popup);
 
@@ -367,7 +363,7 @@ describe('Text Inline Popup plugin', function () {
 
 			const popup = getOpenedPopup(editor);
 
-			expect(popup && popup.parentNode.parentNode !== null).is.true;
+			expect(popup && popup.parentNode.parentNode != null).is.true;
 
 			clickTrigger('addcolumn', popup);
 
@@ -400,7 +396,7 @@ describe('Text Inline Popup plugin', function () {
 
 			const popup = getOpenedPopup(editor);
 
-			expect(popup && popup.parentNode.parentNode !== null).is.true;
+			expect(popup && popup.parentNode.parentNode != null).is.true;
 
 			clickTrigger('addrow', popup);
 
@@ -438,7 +434,7 @@ describe('Text Inline Popup plugin', function () {
 
 			const popup = getOpenedPopup(editor);
 
-			expect(popup && popup.parentNode.parentNode !== null).is.true;
+			expect(popup && popup.parentNode.parentNode != null).is.true;
 
 			clickTrigger('delete', popup);
 
@@ -477,7 +473,7 @@ describe('Text Inline Popup plugin', function () {
 
 			const popup = getOpenedPopup(editor);
 
-			expect(popup && popup.parentNode.parentNode !== null).is.true;
+			expect(popup && popup.parentNode.parentNode != null).is.true;
 
 			clickTrigger('delete', popup);
 
@@ -498,24 +494,28 @@ describe('Text Inline Popup plugin', function () {
 				it('Should Open inline popup', function () {
 					const editor = getJodit();
 
-					editor.value = '<table style="width: 100%;">' +
+					editor.value =
+						'<table style="width: 100%;">' +
 						'<tbody>' +
-							'<tr>' +
-								'<td><a href="http://localhost:8000/">href</a></td>' +
-								'<td><br></td>' +
-							'</tr>' +
-					'</tbody>' +
-				'</table>';
+						'<tr>' +
+						'<td><a href="http://localhost:8000/">href</a></td>' +
+						'<td><br></td>' +
+						'</tr>' +
+						'</tbody>' +
+						'</table>';
 
 					simulateEvent('click', editor.editor.querySelector('a'));
 
-					simulateEvent('mousedown', editor.editor.querySelector('a'));
+					simulateEvent(
+						'mousedown',
+						editor.editor.querySelector('a')
+					);
 					simulateEvent('mouseup', editor.editor.querySelector('a'));
 					simulateEvent('click', editor.editor.querySelector('a'));
 
 					const popup = getOpenedPopup(editor);
 
-					expect(popup && popup.parentNode.parentNode !== null).equals(
+					expect(popup && popup.parentNode.parentNode != null).equals(
 						true
 					);
 
@@ -525,12 +525,11 @@ describe('Text Inline Popup plugin', function () {
 
 					expect(linkEditor).is.not.null;
 
-					const input = linkEditor.querySelector('[data-ref="url_input"]');
+					const input = linkEditor.querySelector(
+						'[data-ref="url_input"]'
+					);
 
-					expect(
-						input.value
-					).equals('http://localhost:8000/');
-
+					expect(input.value).equals('http://localhost:8000/');
 
 					simulateEvent('mousedown', input);
 					simulateEvent('mouseup', input);
@@ -538,11 +537,12 @@ describe('Text Inline Popup plugin', function () {
 
 					input.focus();
 
-					expect(popup && popup.parentNode.parentNode !== null).equals(
+					expect(popup && popup.parentNode.parentNode != null).equals(
 						true
 					);
 
-					linkEditor.querySelector('[data-ref="url_input"]').value = 'https://xdsoft.net';
+					linkEditor.querySelector('[data-ref="url_input"]').value =
+						'https://xdsoft.net';
 				});
 			});
 		});

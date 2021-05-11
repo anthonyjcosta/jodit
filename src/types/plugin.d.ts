@@ -1,25 +1,39 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
-import { IJodit } from './jodit';
-import { CanPromise, IDestructible, IInitable } from './types';
-import { IViewBased } from './view';
+import type { IJodit } from './jodit';
+import type { CanPromise, IDestructible, IInitable } from './types';
+import type { IViewBased } from './view';
+import type { ButtonGroup, IControlType } from './toolbar';
 
-export class IPlugin implements IDestructible, IInitable {
-	jodit: IJodit;
+export interface IPluginButton {
+	name: string;
+	group?: ButtonGroup;
+	position?: number;
+	options?: IControlType;
+}
+
+export class IPlugin<T extends IViewBased = IViewBased>
+	implements IDestructible, IInitable {
+	jodit: T;
 
 	static requires?: string[];
 	requires?: string[];
 
 	hasStyle?: boolean;
 
-	init(jodit: IJodit): void;
-	destruct(jodit?: IJodit): void;
+	/**
+	 * Plugin buttons
+	 */
+	buttons?: IPluginButton[];
 
-	constructor(jodit?: IJodit);
+	init(jodit: T): void;
+	destruct(jodit?: T): void;
+
+	constructor(jodit?: T);
 }
 
 interface PluginFunction {
@@ -36,7 +50,7 @@ export interface IExtraPlugin {
 }
 
 export interface IPluginSystem {
-	add(name: string, plugin: PluginType): void;
+	add(name: string, plugin: any): void;
 	get(name: string): PluginType | void;
 	remove(name: string): void;
 	init(jodit: IJodit): CanPromise<void>;

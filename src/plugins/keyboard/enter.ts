@@ -1,13 +1,13 @@
 /*!
  * Jodit Editor (https://xdsoft.net/jodit/)
  * Released under MIT see LICENSE.txt in the project root for license information.
- * Copyright (c) 2013-2020 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
+ * Copyright (c) 2013-2021 Valeriy Chupurnov. All rights reserved. https://xdsoft.net
  */
 
+import type { HTMLTagNames, IJodit, Nullable } from '../../types';
 import * as consts from '../../core/constants';
 import { Dom } from '../../core/dom';
-import { $$, scrollIntoView } from '../../core/helpers';
-import { HTMLTagNames, IJodit, Nullable } from '../../types';
+import { $$, scrollIntoViewIfNeeded } from '../../core/helpers';
 import { Plugin } from '../../core/plugin';
 import { INVISIBLE_SPACE } from '../../core/constants';
 
@@ -47,7 +47,7 @@ export const insertParagraph = (
 
 	Dom.safeRemove(fake);
 
-	scrollIntoView(p, editor.editor, editor.ed);
+	scrollIntoViewIfNeeded(p, editor.editor, editor.ed);
 
 	editor.events?.fire('synchro'); // fire change
 
@@ -219,7 +219,7 @@ export class enter extends Plugin {
 			const br = this.j.createInside.element('br');
 
 			this.j.s.insertNode(br, true);
-			scrollIntoView(br, this.j.editor, this.j.ed);
+			scrollIntoViewIfNeeded(br, this.j.editor, this.j.ed);
 
 			return false;
 		}
@@ -227,7 +227,7 @@ export class enter extends Plugin {
 		return true;
 	}
 
-	private wrapText(current: Node) {
+	private wrapText(current: Node): HTMLElement {
 		let needWrap: Node = current;
 
 		Dom.up(
