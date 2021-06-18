@@ -36,6 +36,7 @@ module.exports = {
 		'no-new-wrappers': 'error',
 		'no-array-constructor': 'error',
 		'new-parens': 'error',
+		'max-classes-per-file': ['error', 1],
 
 		'no-extend-native': 'off',
 		'no-global-assign': 'error',

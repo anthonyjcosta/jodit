@@ -1,7 +1,7 @@
 /*!
  * jodit - Jodit is awesome and usefully wysiwyg editor with filebrowser
  * Author: Chupurnov <chupurnov@gmail.com> (https://xdsoft.net/)
- * Version: v3.6.15
+ * Version: v3.6.18
  * Url: https://xdsoft.net/jodit/
  * License(s): MIT
  */
@@ -908,7 +908,8 @@ class EventsNative {
                                     return false;
                                 }
                                 this.currents.push(event);
-                                result_value = block.syntheticCallback.apply(subject, argumentsList);
+                                result_value =
+                                    block.syntheticCallback.apply(subject, argumentsList);
                                 this.currents.pop();
                                 if (result_value !== undefined) {
                                     result = result_value;
@@ -3684,7 +3685,7 @@ function isURL(str) {
     if (typeof URL !== 'undefined') {
         try {
             const url = new URL(str);
-            return ['https:', 'http:', 'ftp:', 'file:'].includes(url.protocol);
+            return ['https:', 'http:', 'ftp:', 'file:', 'rtmp:'].includes(url.protocol);
         }
         catch (e) {
             return false;
@@ -8554,21 +8555,29 @@ class Async {
             return 0;
         }
         let options = {};
-        if (typeof timeout !== 'number') {
+        if (!(0,helpers.isNumber)(timeout)) {
             options = timeout;
             timeout = options.timeout || 0;
         }
-        if (options.label && this.timers.has(options.label)) {
-            (0,helpers.clearTimeout)(this.timers.get(options.label));
-            this.timers.delete(options.label);
+        if (options.label) {
+            this.clearLabel(options.label);
         }
         const timer = (0,helpers.setTimeout)(callback, timeout, ...args), key = options.label || timer;
         this.timers.set(key, timer);
         return timer;
     }
-    clearTimeout(timer) {
-        (0,helpers.clearTimeout)(timer);
-        this.timers.delete(timer);
+    clearLabel(label) {
+        if (label && this.timers.has(label)) {
+            (0,helpers.clearTimeout)(this.timers.get(label));
+            this.timers.delete(label);
+        }
+    }
+    clearTimeout(timerOrLabel) {
+        if ((0,helpers.isString)(timerOrLabel)) {
+            return this.clearLabel(timerOrLabel);
+        }
+        (0,helpers.clearTimeout)(timerOrLabel);
+        this.timers.delete(timerOrLabel);
     }
     debounce(fn, timeout, firstCallImmediately = false) {
         let timer = 0, fired = false;
@@ -9098,7 +9107,7 @@ class View extends component/* Component */.wA {
         this.isView = true;
         this.mods = {};
         this.components = new Set();
-        this.version = "3.6.15";
+        this.version = "3.6.18";
         this.async = new Async();
         this.buffer = Storage.makeStorage();
         this.storage = Storage.makeStorage(true, this.componentName);
@@ -9196,10 +9205,10 @@ class View extends component/* Component */.wA {
         return this.__isFullSize;
     }
     getVersion() {
-        return "3.6.15";
+        return "3.6.18";
     }
     static getVersion() {
-        return "3.6.15";
+        return "3.6.18";
     }
     initOptions(options) {
         this.options = (0,helpers.ConfigProto)(options || {}, (0,helpers.ConfigProto)(this.options || {}, View.defaultOptions));
@@ -11156,8 +11165,7 @@ class DataProvider {
         opt.items.data.source = source;
         opt.items.data.mods = mods;
         return this.get('items').then(resp => {
-            let process = this.o.items
-                .process;
+            let process = this.o.items.process;
             if (!process) {
                 process = this.o.ajax.process;
             }
@@ -13844,6 +13852,7 @@ class Select {
         this.errorNode(node);
         if (!this.isFocused() && this.j.isEditorMode()) {
             this.focus();
+            this.restore();
         }
         const sel = this.sel;
         if (!this.isCollapsed()) {
@@ -13891,6 +13900,7 @@ class Select {
         let lastChild;
         if (!this.isFocused() && this.j.isEditorMode()) {
             this.focus();
+            this.restore();
         }
         if (!dom/* Dom.isNode */.i.isNode(html, this.win)) {
             node.innerHTML = html.toString();
@@ -15446,6 +15456,14 @@ class Jodit extends ViewWithToolbar {
     className() {
         return 'Jodit';
     }
+    waitForReady() {
+        if (this.isReady) {
+            return Promise.resolve(this);
+        }
+        return this.async.promise(resolve => {
+            this.hookStatus('ready', () => resolve(this));
+        });
+    }
     get text() {
         if (this.editor) {
             return this.editor.innerText || '';
@@ -16439,7 +16457,7 @@ config/* Config.prototype.controls.about */.D.prototype.controls.about = {
             ? 'MIT'
             : (0,helpers.normalizeLicense)(editor.o.license))}</div>
 					<div>
-						<a href="https://xdsoft.net/jodit/" target="_blank">http://xdsoft.net/jodit/</a>
+						<a href="${"https://xdsoft.net/jodit/"}" target="_blank">${"https://xdsoft.net/jodit/"}</a>
 					</div>
 					<div>
 						<a href="https://xdsoft.net/jodit/doc/" target="_blank">${i18n("Jodit User's Guide")}</a>
@@ -16813,9 +16831,7 @@ class Delete extends Plugin {
         let charRemoved = false, removed;
         while (sibling && (dom/* Dom.isText */.i.isText(sibling) || dom/* Dom.isInlineBlock */.i.isInlineBlock(sibling))) {
             while (dom/* Dom.isInlineBlock */.i.isInlineBlock(sibling)) {
-                sibling = (backspace
-                    ? sibling === null || sibling === void 0 ? void 0 : sibling.lastChild
-                    : sibling === null || sibling === void 0 ? void 0 : sibling.firstChild);
+                sibling = (backspace ? sibling === null || sibling === void 0 ? void 0 : sibling.lastChild : sibling === null || sibling === void 0 ? void 0 : sibling.firstChild);
             }
             if (!sibling) {
                 break;
@@ -21935,12 +21951,14 @@ class placeholder extends Plugin {
             marginLeft = parseInt(style2.getPropertyValue('margin-left'), 10);
             this.placeholderElm.style.fontSize =
                 parseInt(style2.getPropertyValue('font-size'), 10) + 'px';
-            this.placeholderElm.style.lineHeight = style2.getPropertyValue('line-height');
+            this.placeholderElm.style.lineHeight =
+                style2.getPropertyValue('line-height');
         }
         else {
             this.placeholderElm.style.fontSize =
                 parseInt(style.getPropertyValue('font-size'), 10) + 'px';
-            this.placeholderElm.style.lineHeight = style.getPropertyValue('line-height');
+            this.placeholderElm.style.lineHeight =
+                style.getPropertyValue('line-height');
         }
         (0,helpers.css)(this.placeholderElm, {
             display: 'block',
@@ -22868,12 +22886,12 @@ class select_select extends Plugin {
     }
     afterInit(jodit) {
         this.proxyEventsList.forEach(eventName => {
-            jodit.e.on(eventName + '.inline-popup', this.onStartSelection);
+            jodit.e.on(eventName + '.select', this.onStartSelection);
         });
     }
     beforeDestruct(jodit) {
         this.proxyEventsList.forEach(eventName => {
-            jodit.e.on(eventName + '.inline-popup', this.onStartSelection);
+            jodit.e.on(eventName + '.select', this.onStartSelection);
         });
     }
     onStartSelection(e) {
@@ -23542,6 +23560,8 @@ function createSourceEditor(type, editor, container, toWYSIWYG, fromWYSIWYG) {
 
 
 
+
+
 class source extends Plugin {
     constructor() {
         super(...arguments);
@@ -23557,62 +23577,6 @@ class source extends Plugin {
         this.tempMarkerStartReg = /{start-jodit-selection}/g;
         this.tempMarkerEnd = '{end-jodit-selection}';
         this.tempMarkerEndReg = /{end-jodit-selection}/g;
-        this.selInfo = [];
-        this.insertHTML = (html) => {
-            var _a;
-            (_a = this.sourceEditor) === null || _a === void 0 ? void 0 : _a.insertRaw(html);
-            this.toWYSIWYG();
-        };
-        this.fromWYSIWYG = (force = false) => {
-            if (!this.__lock || force === true) {
-                this.__lock = true;
-                const new_value = this.j.getEditorValue(false);
-                if (new_value !== this.getMirrorValue()) {
-                    this.setMirrorValue(new_value);
-                }
-                this.__lock = false;
-            }
-        };
-        this.toWYSIWYG = () => {
-            if (this.__lock) {
-                return;
-            }
-            const value = this.getMirrorValue();
-            if (value === this.__oldMirrorValue) {
-                return;
-            }
-            this.__lock = true;
-            this.j.setEditorValue(value);
-            this.__lock = false;
-            this.__oldMirrorValue = value;
-        };
-        this.getNormalPosition = (pos, str) => {
-            let start = pos;
-            while (start > 0) {
-                start--;
-                if (str[start] === '<' &&
-                    str[start + 1] !== undefined &&
-                    str[start + 1].match(/[\w/]+/i)) {
-                    return start;
-                }
-                if (str[start] === '>') {
-                    return pos;
-                }
-            }
-            return pos;
-        };
-        this.__clear = (str) => str.replace(constants.INVISIBLE_SPACE_REG_EXP(), '');
-        this.selectAll = () => {
-            var _a;
-            (_a = this.sourceEditor) === null || _a === void 0 ? void 0 : _a.selectAll();
-        };
-        this.onSelectAll = (command) => {
-            if (command.toLowerCase() === 'selectall' &&
-                this.j.getRealMode() === constants.MODE_SOURCE) {
-                this.selectAll();
-                return false;
-            }
-        };
         this.getSelectionStart = () => {
             var _a, _b;
             return (_b = (_a = this.sourceEditor) === null || _a === void 0 ? void 0 : _a.getSelectionStart()) !== null && _b !== void 0 ? _b : 0;
@@ -23621,105 +23585,63 @@ class source extends Plugin {
             var _a, _b;
             return (_b = (_a = this.sourceEditor) === null || _a === void 0 ? void 0 : _a.getSelectionEnd()) !== null && _b !== void 0 ? _b : 0;
         };
-        this.saveSelection = () => {
-            if (this.j.getRealMode() === constants.MODE_WYSIWYG) {
-                this.selInfo = this.j.s.save() || [];
-                this.j.setEditorValue();
-                this.fromWYSIWYG(true);
-            }
-            else {
-                this.selInfo.length = 0;
-                if (this.j.o.editHTMLDocumentMode) {
-                    return;
-                }
-                const value = this.getMirrorValue();
-                if (this.getSelectionStart() === this.getSelectionEnd()) {
-                    const marker = this.j.s.marker(true);
-                    this.selInfo[0] = {
-                        startId: marker.id,
-                        collapsed: true,
-                        startMarker: marker.outerHTML
-                    };
-                    const selectionStart = this.getNormalPosition(this.getSelectionStart(), this.getMirrorValue());
-                    this.setMirrorValue(value.substr(0, selectionStart) +
-                        this.__clear(this.selInfo[0].startMarker) +
-                        value.substr(selectionStart));
-                }
-                else {
-                    const markerStart = this.j.s.marker(true);
-                    const markerEnd = this.j.s.marker(false);
-                    this.selInfo[0] = {
-                        startId: markerStart.id,
-                        endId: markerEnd.id,
-                        collapsed: false,
-                        startMarker: this.__clear(markerStart.outerHTML),
-                        endMarker: this.__clear(markerEnd.outerHTML)
-                    };
-                    const selectionStart = this.getNormalPosition(this.getSelectionStart(), value);
-                    const selectionEnd = this.getNormalPosition(this.getSelectionEnd(), value);
-                    this.setMirrorValue(value.substr(0, selectionStart) +
-                        this.selInfo[0].startMarker +
-                        value.substr(selectionStart, selectionEnd - selectionStart) +
-                        this.selInfo[0].endMarker +
-                        value.substr(selectionEnd));
-                }
-                this.toWYSIWYG();
-            }
-        };
-        this.removeSelection = () => {
-            if (!this.selInfo.length) {
-                return;
-            }
-            if (this.j.getRealMode() === constants.MODE_WYSIWYG) {
-                this.__lock = true;
-                this.j.s.restore();
-                this.__lock = false;
-                return;
-            }
-            let value = this.getMirrorValue();
-            let selectionStart = 0, selectionEnd = 0;
-            try {
-                if (this.selInfo[0].startMarker) {
-                    value = value.replace(/<span[^>]+data-jodit-selection_marker="start"[^>]*>[<>]*?<\/span>/gim, this.tempMarkerStart);
-                }
-                if (this.selInfo[0].endMarker) {
-                    value = value.replace(/<span[^>]+data-jodit-selection_marker="end"[^>]*>[<>]*?<\/span>/gim, this.tempMarkerEnd);
-                }
-                if (!this.j.o.editHTMLDocumentMode && this.j.o.beautifyHTML) {
-                    const html = this.j.e.fire('beautifyHTML', value);
-                    if ((0,helpers.isString)(html)) {
-                        value = html;
-                    }
-                }
-                selectionStart = value.indexOf(this.tempMarkerStart);
-                selectionEnd = selectionStart;
-                value = value.replace(this.tempMarkerStartReg, '');
-                if (!this.selInfo[0].collapsed || selectionStart === -1) {
-                    selectionEnd = value.indexOf(this.tempMarkerEnd);
-                    if (selectionStart === -1) {
-                        selectionStart = selectionEnd;
-                    }
-                }
-                value = value.replace(this.tempMarkerEndReg, '');
-            }
-            finally {
-                value = value
-                    .replace(this.tempMarkerEndReg, '')
-                    .replace(this.tempMarkerStartReg, '');
-            }
-            this.setMirrorValue(value);
-            this.setMirrorSelectionRange(selectionStart, selectionEnd);
+    }
+    onInsertHTML(html) {
+        var _a;
+        if (!this.j.o.readonly && !this.j.isEditorMode()) {
+            (_a = this.sourceEditor) === null || _a === void 0 ? void 0 : _a.insertRaw(html);
             this.toWYSIWYG();
-            this.setFocusToMirror();
-        };
-        this.setMirrorSelectionRange = (start, end) => {
-            var _a;
-            (_a = this.sourceEditor) === null || _a === void 0 ? void 0 : _a.setSelectionRange(start, end);
-        };
-        this.onReadonlyReact = () => {
-            var _a;
-            (_a = this.sourceEditor) === null || _a === void 0 ? void 0 : _a.setReadOnly(this.j.o.readonly);
-        };
+            return false;
+        }
+    }
+    fromWYSIWYG(force = false) {
+        if (!this.__lock || force === true) {
+            this.__lock = true;
+            const new_value = this.j.getEditorValue(false);
+            if (new_value !== this.getMirrorValue()) {
+                this.setMirrorValue(new_value);
+            }
+            this.__lock = false;
+        }
+    }
+    toWYSIWYG() {
+        if (this.__lock) {
+            return;
+        }
+        const value = this.getMirrorValue();
+        if (value === this.__oldMirrorValue) {
+            return;
+        }
+        this.__lock = true;
+        this.j.setEditorValue(value);
+        this.__lock = false;
+        this.__oldMirrorValue = value;
+    }
+    getNormalPosition(pos, str) {
+        let start = pos;
+        while (start > 0) {
+            start--;
+            if (str[start] === '<' &&
+                str[start + 1] !== undefined &&
+                str[start + 1].match(/[\w/]+/i)) {
+                return start;
+            }
+            if (str[start] === '>') {
+                return pos;
+            }
+        }
+        return pos;
+    }
+    clnInv(str) {
+        return str.replace(constants.INVISIBLE_SPACE_REG_EXP(), '');
+    }
+    onSelectAll(command) {
+        var _a;
+        if (command.toLowerCase() === 'selectall' &&
+            this.j.getRealMode() === constants.MODE_SOURCE) {
+            (_a = this.sourceEditor) === null || _a === void 0 ? void 0 : _a.selectAll();
+            return false;
+        }
     }
     getMirrorValue() {
         var _a;
@@ -23732,6 +23654,118 @@ class source extends Plugin {
     setFocusToMirror() {
         var _a;
         (_a = this.sourceEditor) === null || _a === void 0 ? void 0 : _a.focus();
+    }
+    saveSelection() {
+        if (this.j.getRealMode() === constants.MODE_WYSIWYG) {
+            this.j.s.save();
+            this.j.setEditorValue();
+            this.fromWYSIWYG(true);
+        }
+        else {
+            if (this.j.o.editHTMLDocumentMode) {
+                return;
+            }
+            const value = this.getMirrorValue();
+            if (this.getSelectionStart() === this.getSelectionEnd()) {
+                const marker = this.j.s.marker(true);
+                const selectionStart = this.getNormalPosition(this.getSelectionStart(), this.getMirrorValue());
+                this.setMirrorValue(value.substr(0, selectionStart) +
+                    this.clnInv(marker.outerHTML) +
+                    value.substr(selectionStart));
+            }
+            else {
+                const markerStart = this.j.s.marker(true);
+                const markerEnd = this.j.s.marker(false);
+                const selectionStart = this.getNormalPosition(this.getSelectionStart(), value);
+                const selectionEnd = this.getNormalPosition(this.getSelectionEnd(), value);
+                this.setMirrorValue(value.substr(0, selectionStart) +
+                    this.clnInv(markerStart.outerHTML) +
+                    value.substr(selectionStart, selectionEnd - selectionStart) +
+                    this.clnInv(markerEnd.outerHTML) +
+                    value.substr(selectionEnd));
+            }
+            this.toWYSIWYG();
+        }
+    }
+    removeSelection() {
+        if (this.j.getRealMode() === constants.MODE_WYSIWYG) {
+            this.__lock = true;
+            this.j.s.restore();
+            this.__lock = false;
+            return;
+        }
+        let value = this.getMirrorValue();
+        let selectionStart = 0, selectionEnd = 0;
+        try {
+            value = value
+                .replace(/<span[^>]+data-jodit-selection_marker=(["'])start\1[^>]*>[<>]*?<\/span>/gim, this.tempMarkerStart)
+                .replace(/<span[^>]+data-jodit-selection_marker=(["'])end\1[^>]*>[<>]*?<\/span>/gim, this.tempMarkerEnd);
+            if (!this.j.o.editHTMLDocumentMode && this.j.o.beautifyHTML) {
+                const html = this.j.e.fire('beautifyHTML', value);
+                if ((0,helpers.isString)(html)) {
+                    value = html;
+                }
+            }
+            selectionStart = value.indexOf(this.tempMarkerStart);
+            selectionEnd = selectionStart;
+            value = value.replace(this.tempMarkerStartReg, '');
+            if (selectionStart !== -1) {
+                const selectionEndCursor = value.indexOf(this.tempMarkerEnd);
+                if (selectionEndCursor !== -1) {
+                    selectionEnd = selectionEndCursor;
+                }
+            }
+            value = value.replace(this.tempMarkerEndReg, '');
+        }
+        finally {
+            value = value
+                .replace(this.tempMarkerEndReg, '')
+                .replace(this.tempMarkerStartReg, '');
+        }
+        this.setMirrorValue(value);
+        this.setMirrorSelectionRange(selectionStart, selectionEnd);
+        this.toWYSIWYG();
+        this.setFocusToMirror();
+    }
+    setMirrorSelectionRange(start, end) {
+        var _a;
+        (_a = this.sourceEditor) === null || _a === void 0 ? void 0 : _a.setSelectionRange(start, end);
+    }
+    onReadonlyReact() {
+        var _a;
+        (_a = this.sourceEditor) === null || _a === void 0 ? void 0 : _a.setReadOnly(this.j.o.readonly);
+    }
+    afterInit(editor) {
+        this.mirrorContainer = editor.c.div('jodit-source');
+        editor.workplace.appendChild(this.mirrorContainer);
+        editor.e.on('afterAddPlace changePlace afterInit', () => {
+            editor.workplace.appendChild(this.mirrorContainer);
+        });
+        this.sourceEditor = createSourceEditor('area', editor, this.mirrorContainer, this.toWYSIWYG, this.fromWYSIWYG);
+        this.onReadonlyReact();
+        editor.e
+            .on('placeholder.source', (text) => {
+            var _a;
+            (_a = this.sourceEditor) === null || _a === void 0 ? void 0 : _a.setPlaceHolder(text);
+        })
+            .on('change.source', this.fromWYSIWYG)
+            .on('beautifyHTML', html => html);
+        if (editor.o.beautifyHTML) {
+            const addEventListener = () => {
+                var _a;
+                const html_beautify = editor.ow.html_beautify;
+                if (html_beautify && !editor.isInDestruct) {
+                    (_a = editor.events) === null || _a === void 0 ? void 0 : _a.off('beautifyHTML').on('beautifyHTML', html => html_beautify(html));
+                    return true;
+                }
+                return false;
+            };
+            if (!addEventListener()) {
+                (0,helpers.loadNext)(editor, editor.o.beautifyHTMLCDNUrlsJS).then(addEventListener);
+            }
+        }
+        this.fromWYSIWYG();
+        this.initSourceEditor(editor);
     }
     initSourceEditor(editor) {
         var _a;
@@ -23753,53 +23787,6 @@ class source extends Plugin {
             });
         }
     }
-    afterInit(editor) {
-        this.mirrorContainer = editor.c.div('jodit-source');
-        editor.workplace.appendChild(this.mirrorContainer);
-        editor.e.on('afterAddPlace changePlace afterInit', () => {
-            editor.workplace.appendChild(this.mirrorContainer);
-        });
-        this.sourceEditor = createSourceEditor('area', editor, this.mirrorContainer, this.toWYSIWYG, this.fromWYSIWYG);
-        const addListeners = () => {
-            editor.e
-                .off('beforeSetMode.source afterSetMode.source')
-                .on('beforeSetMode.source', this.saveSelection)
-                .on('afterSetMode.source', this.removeSelection);
-        };
-        addListeners();
-        this.onReadonlyReact();
-        editor.e
-            .on('insertHTML.source', (html) => {
-            if (!editor.o.readonly && !this.j.isEditorMode()) {
-                this.insertHTML(html);
-                return false;
-            }
-        })
-            .on('readonly.source', this.onReadonlyReact)
-            .on('placeholder.source', (text) => {
-            var _a;
-            (_a = this.sourceEditor) === null || _a === void 0 ? void 0 : _a.setPlaceHolder(text);
-        })
-            .on('beforeCommand.source', this.onSelectAll)
-            .on('change.source', this.fromWYSIWYG);
-        editor.e.on('beautifyHTML', html => html);
-        if (editor.o.beautifyHTML) {
-            const addEventListener = () => {
-                var _a, _b;
-                const html_beautify = editor.ow.html_beautify;
-                if (html_beautify && !editor.isInDestruct) {
-                    (_b = (_a = editor.events) === null || _a === void 0 ? void 0 : _a.off('beautifyHTML')) === null || _b === void 0 ? void 0 : _b.on('beautifyHTML', html => html_beautify(html));
-                    return true;
-                }
-                return false;
-            };
-            if (!addEventListener()) {
-                (0,helpers.loadNext)(editor, editor.o.beautifyHTMLCDNUrlsJS).then(addEventListener);
-            }
-        }
-        this.fromWYSIWYG();
-        this.initSourceEditor(editor);
-    }
     beforeDestruct(jodit) {
         if (this.sourceEditor) {
             this.sourceEditor.destruct();
@@ -23808,6 +23795,33 @@ class source extends Plugin {
         dom/* Dom.safeRemove */.i.safeRemove(this.mirrorContainer);
     }
 }
+(0,tslib_es6.__decorate)([
+    (0,decorators.watch)(':insertHTML.source')
+], source.prototype, "onInsertHTML", null);
+(0,tslib_es6.__decorate)([
+    decorators.autobind
+], source.prototype, "fromWYSIWYG", null);
+(0,tslib_es6.__decorate)([
+    decorators.autobind
+], source.prototype, "toWYSIWYG", null);
+(0,tslib_es6.__decorate)([
+    decorators.autobind
+], source.prototype, "getNormalPosition", null);
+(0,tslib_es6.__decorate)([
+    (0,decorators.watch)(':beforeCommand.source')
+], source.prototype, "onSelectAll", null);
+(0,tslib_es6.__decorate)([
+    (0,decorators.watch)(':beforeSetMode.source')
+], source.prototype, "saveSelection", null);
+(0,tslib_es6.__decorate)([
+    (0,decorators.watch)(':afterSetMode.source')
+], source.prototype, "removeSelection", null);
+(0,tslib_es6.__decorate)([
+    decorators.autobind
+], source.prototype, "setMirrorSelectionRange", null);
+(0,tslib_es6.__decorate)([
+    (0,decorators.watch)(':readonly.source')
+], source.prototype, "onReadonlyReact", null);
 
 ;// CONCATENATED MODULE: ./src/plugins/source/index.ts
 /*!
@@ -24341,7 +24355,8 @@ class symbols extends Plugin {
 
 config/* Config.prototype.table */.D.prototype.table = {
     allowCellSelection: true,
-    selectionCellStyle: 'border: 1px double #1e88e5 !important;',
+    selectionCellStyle: 'border: 1px double #1e88e5 !important;' +
+        'background-color: rgba(158, 207, 250, 0.3)!important',
     allowCellResize: true,
     useExtraClassesOptions: false
 };
@@ -24548,8 +24563,7 @@ class resizeCells extends Plugin {
         this.minX = 0;
         this.maxX = 1000000;
         if (this.wholeTable != null) {
-            tableBox = this.workTable
-                .parentNode.getBoundingClientRect();
+            tableBox = this.workTable.parentNode.getBoundingClientRect();
             this.minX = tableBox.left;
             this.maxX = this.minX + tableBox.width;
         }
@@ -24706,7 +24720,7 @@ class resizeCells extends Plugin {
                 this.hideResizeHandle();
             }
         })
-            .on(table, 'mousemove.resize-cells touchmove.resize-cells', (event) => {
+            .on(table, 'mousemove.resize-cells touchmove.resize-cells', this.j.async.throttle((event) => {
             if (this.j.isLocked) {
                 return;
             }
@@ -24715,7 +24729,9 @@ class resizeCells extends Plugin {
                 return;
             }
             this.calcHandlePosition(table, cell, event.offsetX);
-        });
+        }, {
+            timeout: this.j.defaultTimeout
+        }));
         this.createResizeHandle();
     }
     beforeDestruct(jodit) {
@@ -24752,11 +24768,13 @@ class resizeCells extends Plugin {
 
 
 const select_cells_key = 'table_processor_observer';
+const MOUSE_MOVE_LABEL = 'onMoveTableSelectCell';
 class selectCells extends Plugin {
     constructor() {
         super(...arguments);
         this.requires = ['select'];
         this.selectedCell = null;
+        this.isSelectionMode = false;
     }
     get module() {
         return this.j.getInstance('Table', this.j.o);
@@ -24782,8 +24800,13 @@ class selectCells extends Plugin {
         ]
             .map(e => e + '.select-cells')
             .join(' '), this.onStartSelection)
-            .on('clickTr', () => {
-            if (this.module.getAllSelectedCells().length) {
+            .on('clickTr clickTbody', () => {
+            var _a;
+            const cellsCount = this.module.getAllSelectedCells().length;
+            if (cellsCount) {
+                if (cellsCount > 1) {
+                    (_a = this.j.s.sel) === null || _a === void 0 ? void 0 : _a.removeAllRanges();
+                }
                 return false;
             }
         });
@@ -24803,17 +24826,28 @@ class selectCells extends Plugin {
         if (!cell.firstChild) {
             cell.appendChild(this.j.createInside.element('br'));
         }
+        this.isSelectionMode = true;
         this.selectedCell = cell;
         this.module.addSelection(cell);
         this.j.e
-            .on(table, 'mousemove.select-cells touchmove.select-cells', this.onMove.bind(this, table))
+            .on(table, 'mousemove.select-cells touchmove.select-cells', this.j.async.throttle(this.onMove.bind(this, table), {
+            label: MOUSE_MOVE_LABEL,
+            timeout: this.j.defaultTimeout / 2
+        }))
             .on(table, 'mouseup.select-cells touchend.select-cells', this.onStopSelection.bind(this, table));
         return false;
     }
-    onOutsideClick(e) {
-        this.unselectCells();
+    onOutsideClick() {
+        this.selectedCell = null;
+        this.onRemoveSelection();
+    }
+    onChange() {
+        if (!this.j.isLocked && !this.isSelectionMode) {
+            this.onRemoveSelection();
+        }
     }
     onMove(table, e) {
+        var _a;
         if (this.j.o.readonly) {
             return;
         }
@@ -24838,6 +24872,10 @@ class selectCells extends Plugin {
                 this.module.addSelection(box[i][j]);
             }
         }
+        const cellsCount = this.module.getAllSelectedCells().length;
+        if (cellsCount > 1) {
+            (_a = this.j.s.sel) === null || _a === void 0 ? void 0 : _a.removeAllRanges();
+        }
         this.j.e.fire('hidePopup');
         e.stopPropagation();
         (() => {
@@ -24859,12 +24897,14 @@ class selectCells extends Plugin {
             this.j.e.fire('hidePopup', 'cells');
             return;
         }
+        this.isSelectionMode = false;
         this.selectedCell = null;
     }
     onStopSelection(table, e) {
         if (!this.selectedCell) {
             return;
         }
+        this.isSelectionMode = false;
         this.j.unlock();
         const node = this.j.ed.elementFromPoint(e.clientX, e.clientY);
         if (!node) {
@@ -24892,6 +24932,7 @@ class selectCells extends Plugin {
         (0,helpers.$$)('table', this.j.editor).forEach(table => {
             this.j.e.off(table, 'mousemove.select-cells touchmove.select-cells mouseup.select-cells touchend.select-cells');
         });
+        this.j.async.clearTimeout(MOUSE_MOVE_LABEL);
     }
     unselectCells(table, currentCell) {
         const module = this.module;
@@ -24970,6 +25011,9 @@ class selectCells extends Plugin {
 (0,tslib_es6.__decorate)([
     (0,decorators.watch)(':outsideClick')
 ], selectCells.prototype, "onOutsideClick", null);
+(0,tslib_es6.__decorate)([
+    (0,decorators.watch)(':change')
+], selectCells.prototype, "onChange", null);
 (0,tslib_es6.__decorate)([
     decorators.autobind
 ], selectCells.prototype, "onRemoveSelection", null);

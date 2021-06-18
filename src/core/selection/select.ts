@@ -554,6 +554,7 @@ export class Select {
 
 		if (!this.isFocused() && this.j.isEditorMode()) {
 			this.focus();
+			this.restore();
 		}
 
 		const sel = this.sel;
@@ -623,6 +624,7 @@ export class Select {
 
 		if (!this.isFocused() && this.j.isEditorMode()) {
 			this.focus();
+			this.restore();
 		}
 
 		if (!Dom.isNode(html, this.win)) {
@@ -797,9 +799,8 @@ export class Select {
 					if (current.firstChild) {
 						current = current.firstChild;
 					} else {
-						const currentB = this.j.createInside.text(
-							INVISIBLE_SPACE
-						);
+						const currentB =
+							this.j.createInside.text(INVISIBLE_SPACE);
 
 						current.appendChild(currentB);
 						current = currentB;
