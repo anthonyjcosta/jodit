@@ -19,12 +19,15 @@ export class Icon {
 		if (/^<svg/i.test(name)) {
 			return name;
 		}
-
-		return (
+		const other =
 			Icon.icons[name] ||
 			Icon.icons[name.replace(/-/g, '_')] ||
 			Icon.icons[name.toLowerCase()]
-		);
+		;
+		if (!other) { // revert back to name if other methods fail -dqj 6/18/21
+			return name;
+		}
+		return other;
 	}
 
 	/**

@@ -5674,13 +5674,23 @@ function $$(selector, root) {
             '_selector_id_' + String(Math.random()).slice(2) + $$temp();
         selector = selector.replace(/:scope/g, '#' + temp_id);
         !id && root.setAttribute('id', temp_id);
-        result = root.parentNode.querySelectorAll(selector);
+        if (root.parentNode) {
+            result = root.parentNode.querySelectorAll(selector);
+        }
+        else {
+            return [];
+        }
         if (!id) {
             root.removeAttribute('id');
         }
     }
     else {
-        result = root.querySelectorAll(selector);
+        if (root) {
+            result = root.querySelectorAll(selector);
+        }
+        else {
+            return [];
+        }
     }
     return [].slice.call(result);
 }
@@ -6280,9 +6290,13 @@ var Icon = (function () {
         if (/^<svg/i.test(name)) {
             return name;
         }
-        return (Icon.icons[name] ||
+        var other = Icon.icons[name] ||
             Icon.icons[name.replace(/-/g, '_')] ||
-            Icon.icons[name.toLowerCase()]);
+            Icon.icons[name.toLowerCase()];
+        if (!other) {
+            return name;
+        }
+        return other;
     };
     Icon.exists = function (name) {
         return this.getIcon(name) !== undefined;
@@ -6849,9 +6863,12 @@ var UIButton = (function (_super) {
             (helpers_1.isFunction(textIcons) && textIcons(this.state.name))) {
             return;
         }
-        dom_1.Dom.detach(this.icon);
         var iconElement = icon_1.Icon.makeIcon(this.j, this.state.icon);
-        iconElement && this.icon.appendChild(iconElement);
+        console.log('onChangeIcon Make:', iconElement);
+        if (iconElement) {
+            dom_1.Dom.detach(this.icon);
+            iconElement && this.icon.appendChild(iconElement);
+        }
     };
     UIButton.prototype.focus = function () {
         this.container.focus();
@@ -15421,8 +15438,10 @@ var Select = (function () {
         configurable: true
     });
     Select.prototype.errorNode = function (node) {
-        if (!dom_1.Dom.isNode(node, this.win)) {
-            throw helpers_1.error('Parameter node must be instance of Node');
+        if (this.win) {
+            if (!dom_1.Dom.isNode(node, this.win)) {
+                throw helpers_1.error('Parameter node must be instance of Node');
+            }
         }
     };
     Object.defineProperty(Select.prototype, "area", {
@@ -15448,10 +15467,13 @@ var Select = (function () {
     });
     Object.defineProperty(Select.prototype, "sel", {
         get: function () {
-            if (this.j.o.shadowRoot) {
+            if (this.j.o && this.j.o.shadowRoot) {
                 return this.j.o.shadowRoot.getSelection();
             }
-            return this.win.getSelection();
+            if (this.win) {
+                return this.win.getSelection();
+            }
+            return null;
         },
         enumerable: false,
         configurable: true
@@ -15560,7 +15582,7 @@ var Select = (function () {
             return "span[data-" + consts.MARKER_CLASS + "=" + (start ? 'start' : 'end') + "]";
         };
         var start = this.area.querySelector(markAttr(true)), end = this.area.querySelector(markAttr(false));
-        if (!start) {
+        if (!start || !this.area) {
             return;
         }
         range = this.createRange();

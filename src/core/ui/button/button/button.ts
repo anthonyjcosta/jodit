@@ -159,10 +159,13 @@ export class UIButton extends UIElement implements IUIButton {
 			return;
 		}
 
-		Dom.detach(this.icon);
-
+		// -dqj 6/18/21 - Don't detach unless we make an icon successfully.
 		const iconElement = Icon.makeIcon(this.j, this.state.icon);
-		iconElement && this.icon.appendChild(iconElement);
+		console.log('onChangeIcon Make:', iconElement);
+		if (iconElement) {
+			Dom.detach(this.icon);
+			iconElement && this.icon.appendChild(iconElement);
+		}
 	}
 
 	/**

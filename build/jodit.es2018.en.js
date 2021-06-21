@@ -1499,7 +1499,12 @@ function $$(selector, root) {
     let result;
     if (false) {}
     else {
-        result = root.querySelectorAll(selector);
+        if (root) {
+            result = root.querySelectorAll(selector);
+        }
+        else {
+            return [];
+        }
     }
     return [].slice.call(result);
 }
@@ -4429,9 +4434,13 @@ class Icon {
         if (/^<svg/i.test(name)) {
             return name;
         }
-        return (Icon.icons[name] ||
+        const other = Icon.icons[name] ||
             Icon.icons[name.replace(/-/g, '_')] ||
-            Icon.icons[name.toLowerCase()]);
+            Icon.icons[name.toLowerCase()];
+        if (!other) {
+            return name;
+        }
+        return other;
     }
     static exists(name) {
         return this.getIcon(name) !== undefined;
@@ -4932,9 +4941,12 @@ let UIButton = class UIButton extends ui_element/* UIElement */.u {
             ((0,helpers.isFunction)(textIcons) && textIcons(this.state.name))) {
             return;
         }
-        dom/* Dom.detach */.i.detach(this.icon);
         const iconElement = icon/* Icon.makeIcon */.J.makeIcon(this.j, this.state.icon);
-        iconElement && this.icon.appendChild(iconElement);
+        console.log('onChangeIcon Make:', iconElement);
+        if (iconElement) {
+            dom/* Dom.detach */.i.detach(this.icon);
+            iconElement && this.icon.appendChild(iconElement);
+        }
     }
     focus() {
         this.container.focus();
@@ -13561,8 +13573,10 @@ class Select {
         return this.jodit;
     }
     errorNode(node) {
-        if (!dom/* Dom.isNode */.i.isNode(node, this.win)) {
-            throw (0,helpers.error)('Parameter node must be instance of Node');
+        if (this.win) {
+            if (!dom/* Dom.isNode */.i.isNode(node, this.win)) {
+                throw (0,helpers.error)('Parameter node must be instance of Node');
+            }
         }
     }
     get area() {
@@ -13575,10 +13589,13 @@ class Select {
         return this.j.ed;
     }
     get sel() {
-        if (this.j.o.shadowRoot) {
+        if (this.j.o && this.j.o.shadowRoot) {
             return this.j.o.shadowRoot.getSelection();
         }
-        return this.win.getSelection();
+        if (this.win) {
+            return this.win.getSelection();
+        }
+        return null;
     }
     get range() {
         const sel = this.sel;
@@ -13671,7 +13688,7 @@ class Select {
         let range = false;
         const markAttr = (start) => `span[data-${constants.MARKER_CLASS}=${start ? 'start' : 'end'}]`;
         const start = this.area.querySelector(markAttr(true)), end = this.area.querySelector(markAttr(false));
-        if (!start) {
+        if (!start || !this.area) {
             return;
         }
         range = this.createRange();

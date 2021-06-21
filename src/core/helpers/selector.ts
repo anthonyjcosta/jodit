@@ -68,13 +68,21 @@ export function $$<T extends HTMLElement>(
 
 		!id && (root as HTMLElement).setAttribute('id', temp_id);
 
-		result = (root.parentNode as HTMLElement).querySelectorAll(selector);
+		if (root.parentNode) { // -dqj 6/18/21
+			result = (root.parentNode as HTMLElement).querySelectorAll(selector);
+		} else {
+			return [];
+		}
 
 		if (!id) {
 			(root as HTMLElement).removeAttribute('id');
 		}
 	} else {
-		result = root.querySelectorAll(selector);
+		if (root) { // -dqj 6/18/21
+			result = root.querySelectorAll(selector);
+		} else {
+			return [];
+		}
 	}
 
 	return [].slice.call(result);

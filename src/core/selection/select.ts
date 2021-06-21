@@ -57,8 +57,10 @@ export class Select {
 	 * @param node
 	 */
 	private errorNode(node: unknown): void {
-		if (!Dom.isNode(node, this.win)) {
-			throw error('Parameter node must be instance of Node');
+		if (this.win) { // -dqj 6/18/21
+			if (!Dom.isNode(node, this.win)) {
+				throw error('Parameter node must be instance of Node');
+			}
 		}
 	}
 
@@ -87,11 +89,13 @@ export class Select {
 	 * Return current selection object
 	 */
 	get sel(): WindowSelection {
-		if (this.j.o.shadowRoot) {
+		if (this.j.o && this.j.o.shadowRoot) { // -dqj 6/18/21
 			return this.j.o.shadowRoot.getSelection();
 		}
-
-		return this.win.getSelection();
+		if (this.win) { // -dqj 6/18/21
+			return this.win.getSelection();
+		}
+		return null; // -dqj 6/18/21
 	}
 
 	/**
@@ -281,7 +285,7 @@ export class Select {
 		const start = this.area.querySelector(markAttr(true)),
 			end = this.area.querySelector(markAttr(false));
 
-		if (!start) {
+		if (!start || !this.area) { // -dqj 6/18/21
 			return;
 		}
 
